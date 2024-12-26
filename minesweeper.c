@@ -22,6 +22,7 @@ int revealmines();
 int generateheatmap();
 int generateemptygroups();
 int checkmines(int location);
+//int showclosetiles(int arraynum); //DOESNT YET WORK
 int draw_frame(int maxx, int maxy);
 int findpath(int pos1, int pos2);
 int handlechecktiles(int location);
@@ -281,6 +282,7 @@ int handlechecktiles(int location)
         }
         move(parseLocation(location, 'y'), parseLocation(location, 'x'));
         curs_set(2);
+        //showclosetiles(arraynum); // DOESNT YET WORK
         return field.freetiles[0][arraynum-1];
     }
     
@@ -332,9 +334,9 @@ int generateemptygroups()
                 int found = 0;
                 for(int i=1;(i<=field.qtyfreetiles)&&!found;++i)
                 {
-                    for (int f=0; f<field.freetiles[0][i-1];++f)
-                    {
-                        if(findpath(counter, field.freetiles[i][f]))
+                    //for (int f=0; f<field.freetiles[0][i-1];++f)
+                    //{
+                        if(findpath(field.freetiles[i][0], counter)==1)
                         {
                             field.freetiles = realloc(field.freetiles, (++msize)*sizeof(int));
                             field.freetiles[i] = realloc(field.freetiles[i], (field.freetiles[0][i-1])*sizeof(int)+sizeof(int));   //reallocate the array to increase size by +4 bytes for the new element, counter
@@ -342,9 +344,9 @@ int generateemptygroups()
                             field.freetiles[0][i-1]=field.freetiles[0][i-1]+1;
                             grouped++;
                             found++;    
-                            break;
+                            //break;
                         }
-                    }
+                    //}
                 }
                 if(found==0)
                 {
@@ -365,19 +367,19 @@ int generateemptygroups()
 
 int findpath(int pos1, int pos2)
 {
-    int curloc = 0;
+    int curloc = pos1;
     int failedattempts = 0;
-    curloc = pos1;
     int priorityxy = 0; // 0 - x, 1 - y
     int directionx = 0; // -1 - left, 1 - right
     int directiony = 0; // -1 - up, 1 - down
+
     while(curloc!=pos2&&failedattempts<3)
     {
         
         directionx = (curloc%fieldwidth>pos2%fieldwidth?-1:1)*(curloc%fieldwidth!=pos2%fieldwidth);
         directiony = (curloc/fieldwidth>pos2/fieldwidth?-1:1)*(curloc/fieldwidth!=pos2/fieldwidth);
 
-        if (field.heatmap[curloc+directionx]!=0&&field.heatmap[curloc+directiony*fieldwidth]!=0)
+        if (field.heatmap[curloc+directionx]!=0&&field.heatmap[curloc+directiony*fieldwidth]!=0) // shouldnt fire if not in corner
         {
             failedattempts++;
             if(curloc-(fieldwidth+1)*(-directionx)>=fieldwidth-1&&field.heatmap[curloc-(fieldwidth+1)*(-directionx)]==0)
@@ -398,13 +400,13 @@ int findpath(int pos1, int pos2)
                 curloc = curloc + directiony*fieldwidth*2;
                 priorityxy = 0;
             }
-            else{return 0;}
+            else{return 0;} // cant do anything
         }
-        else if(field.heatmap[curloc+directionx]!=0&&directiony!=0)
+        else if(field.heatmap[curloc+directionx]!=0&&directiony!=0) // 11->16 shouldnt fire (directiony=0) (w10)
         {
             priorityxy = 1;
         }
-        else if(field.heatmap[curloc+directiony*fieldwidth]!=0&&directionx!=0)
+        else if(field.heatmap[curloc+directiony*fieldwidth]!=0&&directionx!=0)  // 11->16 should? fire
         {
             priorityxy = 0;
         }
@@ -435,3 +437,94 @@ int revealmines()
         mvprintw(maxy/2-fieldheight/2+field.mines[i]/fieldwidth, maxx/2-fieldwidth/2+field.mines[i]%fieldwidth, "+");
     }
 }
+
+/*int showclosetiles(int arraynum)
+{
+    curs_set(0);
+    for(int i = 0; i<field.freetiles[0][arraynum-1];++i)    //DOESNT YET WORK
+    {
+        if(field.freetiles[arraynum][i]==0){ //top left
+            for(int f = 0; f<4;++f)
+            {
+                if(field.heatmap[field.freetiles[arraynum][i]+f%2+f/2*fieldwidth]!=0)
+                {
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]+f%2+f/2*fieldwidth]);
+                }
+            }
+        }
+        else if(field.freetiles[arraynum][i]==fieldwidth-1){ //top right
+            for(int f = 0; f<4;++f)
+            {
+                if(field.heatmap[field.freetiles[arraynum][i]-1+f%2+f/2*fieldwidth]!=0)
+                {
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1+f%2+f/2*fieldwidth]);
+                }
+            }
+        }
+        else if(field.freetiles[arraynum][i]==fieldwidth*fieldheight-fieldwidth){ //bottom left
+            for(int f = 0; f<4;++f)
+            {
+                if(field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+f/2*fieldwidth]!=0)
+                {
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+f/2*fieldwidth]);
+                }
+            }
+        }
+        else if(field.freetiles[arraynum][i]==fieldwidth*fieldheight-1){ //bottom right
+            for(int f = 0; f<4;++f)
+            {
+                if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+f/2*fieldwidth]!=0)
+                {
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+f/2*fieldwidth]);
+                }
+            }
+        }
+        else if(field.freetiles[arraynum][i]%fieldwidth==0){ //left
+            for(int f = 0; f<6;++f)
+            {
+                if(field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+f/2*fieldwidth]!=0)
+                {
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+f/2*fieldwidth]);
+                }
+            }
+        }
+        else if(field.freetiles[arraynum][i]==fieldwidth*fieldheight-1){ //right
+            for(int f = 0; f<6;++f)
+            {
+                if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+f/2*fieldwidth]!=0)
+                {
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+f/2*fieldwidth]);
+                }
+            }
+        }
+        else if(field.freetiles[arraynum][i]<fieldwidth){ //top
+            for(int f = 0; f<6;++f)
+            {
+                if(field.heatmap[field.freetiles[arraynum][i]-1+f%3+f/3*fieldwidth]!=0)
+                {
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*f/3, 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*f/3, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1+f%3+f/3*fieldwidth]);
+                }
+            }
+        }
+        else if(field.freetiles[arraynum][i]>=fieldheight*fieldwidth-fieldwidth){ //bottom
+            for(int f = 0; f<6;++f)
+            {
+                if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+f/3*fieldwidth]!=0)
+                {
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*f/3, 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*f/3, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+f/3*fieldwidth]);
+                }
+            }
+        }
+        else
+        {    
+            for (int f = 0; f<9;++f)
+            {
+                if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+f/3*fieldwidth]!=0)
+                {
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*f/3, 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*f/3, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+f/3*fieldwidth]);
+                }
+            }
+        }
+    }
+    curs_set(2);
+}*/
