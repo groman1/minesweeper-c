@@ -109,19 +109,23 @@ int main()
                 //mvprintw(0,0,"   ");
                 //mvprintw(0,0,"%d",curslocation);  // DEBUG: for getting curret cursor location 
             }
-            if(inch()==' ') {selectedsquares++;}
-            if(field.heatmap[curslocation]!=255)
+            if(inch()==' '||inch()=='M') 
             {
-                handlechecktiles(curslocation);
+                if(field.heatmap[curslocation]!=255)
+                {
+                    selectedsquares+=handlechecktiles(curslocation);
+                }
+                else
+                {
+                    revealmines();
+                    mvprintw(1,maxx/2-4,"You lost");
+                    curs_set(0);
+                    cont = 0;
+                    if(getch()!=114) {stop = 1;}        
+                }
+
             }
-            else
-            {
-                revealmines();
-                mvprintw(1,maxx/2-4,"You lost");
-                curs_set(0);
-                cont = 0;
-                if(getch()!=114) {stop = 1;}        
-            }
+            
             if(selectedsquares==fieldwidth*fieldheight-minescount)
             {
                 revealmines();
@@ -259,6 +263,7 @@ int handlechecktiles(int location)
 
     if(field.heatmap[location]!=0){
         printw("%d", field.heatmap[location]);
+        return 1;
     }
     else
     {
@@ -276,7 +281,9 @@ int handlechecktiles(int location)
         }
         move(parseLocation(location, 'y'), parseLocation(location, 'x'));
         curs_set(2);
+        return field.freetiles[0][arraynum-1];
     }
+    
 }
 
 int draw_frame(int maxx, int maxy)
@@ -294,11 +301,11 @@ int draw_frame(int maxx, int maxy)
 int generateheatmap()
 {
     field.heatmap = malloc(sizeof(unsigned char)*fieldheight*fieldwidth);
-    printw("   ");
+    //printw("   ");
     for (int i = 0;i < fieldheight*fieldwidth; ++i)
     {
         field.heatmap[i] = checkmines(i);
-        printw("%d ", field.heatmap[i]);
+        //printw("%d ", field.heatmap[i]);     DEBUG: for getting the mines locations
     }
 }
 
@@ -325,30 +332,32 @@ int generateemptygroups()
                 int found = 0;
                 for(int i=1;(i<=field.qtyfreetiles)&&!found;++i)
                 {
-                    for (int f=0; f<field.freetiles[0][i-1]/*&&!found*/;++f)
+                    for (int f=0; f<field.freetiles[0][i-1];++f)
                     {
                         if(findpath(counter, field.freetiles[i][f]))
                         {
                             field.freetiles = realloc(field.freetiles, (++msize)*sizeof(int));
-                            field.freetiles[i] = realloc(field.freetiles[i], (field.freetiles[0][i-1])*sizeof(int));   //reallocate the array to increase size by +4 bytes for the new element, counter
+                            field.freetiles[i] = realloc(field.freetiles[i], (field.freetiles[0][i-1])*sizeof(int)+sizeof(int));   //reallocate the array to increase size by +4 bytes for the new element, counter
                             field.freetiles[i][field.freetiles[0][i-1]] = counter;
                             field.freetiles[0][i-1]=field.freetiles[0][i-1]+1;
                             grouped++;
-                            found++;
+                            found++;    
                             break;
                         }
                     }
                 }
-                if(!found)
+                if(found==0)
                 {
                     field.freetiles = realloc(field.freetiles, (++msize)*sizeof(int));
                     field.freetiles[++field.qtyfreetiles] = malloc(sizeof(int));    //allocate a new array with one int(counter), increase qtyfreetiles (used arrays)
                     field.freetiles[field.qtyfreetiles][0]=counter;
                     field.freetiles[0] = realloc(field.freetiles[0], (field.qtyfreetiles+1)*sizeof(int));
                     field.freetiles[0][field.qtyfreetiles-1]=field.freetiles[0][field.qtyfreetiles]+1;
-                    grouped=-12;
+                    grouped++;
+                    //field.qtyfreetiles++;
                 }
             }
+            grouped--;
         }
         counter++;
     }
@@ -359,32 +368,65 @@ int findpath(int pos1, int pos2)
     int curloc = 0;
     int failedattempts = 0;
     curloc = pos1;
-    while(curloc!=pos2&&failedattempts<20)
+    int priorityxy = 0; // 0 - x, 1 - y
+    int directionx = 0; // -1 - left, 1 - right
+    int directiony = 0; // -1 - up, 1 - down
+    while(curloc!=pos2&&failedattempts<3)
     {
-        //try the straightforward path
-        for (int i = 0; i < (curloc>pos2?curloc/fieldwidth-pos2/fieldwidth:pos2/fieldwidth-curloc/fieldwidth); i++)
+        
+        directionx = (curloc%fieldwidth>pos2%fieldwidth?-1:1)*(curloc%fieldwidth!=pos2%fieldwidth);
+        directiony = (curloc/fieldwidth>pos2/fieldwidth?-1:1)*(curloc/fieldwidth!=pos2/fieldwidth);
+
+        if (field.heatmap[curloc+directionx]!=0&&field.heatmap[curloc+directiony*fieldwidth]!=0)
         {
-            curloc+=fieldwidth*(curloc/fieldwidth<pos2/fieldwidth?1:-1)*(curloc/fieldwidth!=pos2/fieldwidth);
-            if(field.heatmap[curloc]!=0)
+            failedattempts++;
+            if(curloc-(fieldwidth+1)*(-directionx)>=fieldwidth-1&&field.heatmap[curloc-(fieldwidth+1)*(-directionx)]==0)
             {
-                curloc-=fieldwidth*(curloc<pos2?1:-1)*(curloc/fieldwidth!=pos2/fieldwidth);
-                failedattempts++;
-                break;
+                curloc = curloc - (fieldwidth+1)*(-directionx);
             }
+            else if (curloc-(fieldwidth+1)*(directionx)>=fieldwidth-1&&field.heatmap[curloc-(fieldwidth+1)*(directionx)]==0)
+            {
+                curloc = curloc - (fieldwidth+1)*(directionx);
+            }
+            else if (field.heatmap[curloc-directionx]==0&&(directionx==1?curloc%fieldwidth<fieldwidth-2:curloc%fieldwidth>=2))
+            {
+                curloc = curloc - directionx*2;
+                priorityxy = 1;
+            }
+            else if (field.heatmap[curloc+directiony*fieldwidth]==0&&(directiony==1?curloc/fieldwidth<=fieldheight-2:curloc/fieldwidth>=2))
+            {
+                curloc = curloc + directiony*fieldwidth*2;
+                priorityxy = 0;
+            }
+            else{return 0;}
         }
-        for (int i = 0; i < (curloc%fieldwidth>pos2%fieldwidth?curloc%fieldwidth-pos2%fieldwidth:pos2%fieldwidth-curloc%fieldwidth); i++)
+        else if(field.heatmap[curloc+directionx]!=0&&directiony!=0)
         {
-            curloc+=(curloc%fieldwidth<pos2%fieldwidth?1:-1)*(curloc%fieldwidth!=pos2%fieldwidth);
-            if(field.heatmap[curloc]!=0)
-            {
-                curloc-=(curloc%fieldwidth<pos2%fieldwidth?1:-1)*(curloc%fieldwidth!=pos2%fieldwidth);
-                failedattempts++;
-                break;
-            }
+            priorityxy = 1;
         }
+        else if(field.heatmap[curloc+directiony*fieldwidth]!=0&&directionx!=0)
+        {
+            priorityxy = 0;
+        }
+
+        //move 
+
+        if(priorityxy)
+        {
+            curloc += fieldwidth*directiony;
+            if(!directiony){priorityxy = 0;}
+            if(!directionx){priorityxy = 1;}
+        }
+        else if (!priorityxy)
+        {
+            curloc += directionx;
+            if(!directiony){priorityxy = 0;}
+            if(!directionx){priorityxy = 1;}
+        }
+        
     }
     if(curloc==pos2) return 1;
-    if(failedattempts==9) return 0;
+    if(failedattempts==2) return 0;
 }
 
 int revealmines()
