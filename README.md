@@ -1,6 +1,6 @@
-A simple minesweeper game implementation using C's curses library. 
+A simple minesweeper game implementation using C's curses library. (needs to be compiled with -lncurses if using gcc)
 Controls: 
 Arrows - move selection,
 Space - select
-Delete - exit
+q - exit
 Insert - mark mine
