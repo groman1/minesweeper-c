@@ -3,7 +3,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
+<<<<<<< Updated upstream
+=======
+#define MARKED COLOR_YELLOW
+#define NEARBY COLOR_CYAN
+#define EMPTY COLOR_GREEN
+#define MINE COLOR_RED
+
+>>>>>>> Stashed changes
 struct field
 {
     int *mines;
@@ -73,6 +82,7 @@ int main()
     initscr();
     noecho();
     keypad(stdscr,1);
+
     int stop = 0;
     while (!stop)
     {
@@ -84,6 +94,7 @@ int main()
         genfield();
         generateheatmap();
         generateemptygroups();
+
         /*printw("\n");
         for(int i = 0; i<minescount;++i)
         {
@@ -104,9 +115,16 @@ int main()
                 else if(curslocation/fieldwidth<fieldheight-1&&ch==258){curslocation+=fieldwidth;} // DOWN
                 else if(curslocation%fieldwidth>0&&ch==260){curslocation-=1;} // LEFT
                 else if(curslocation%fieldwidth<fieldwidth-1&&ch==261){curslocation+=1;} // RIGHT
+<<<<<<< Updated upstream
                 else if(ch==330){endwin();free(field.mines); return 0;}
                 else if(ch==32){break;}
                 else if(ch==331){printw("M");}
+=======
+                else if(ch==113){endwin();free(field.mines); return 0;} //q
+                else if(ch==32){break;} //space
+                else if(ch==331){inch()=='M'?printw(" "):inch()==' '?printw("M"):0;} //insert
+                else if(ch==114){cont=0;} //r
+>>>>>>> Stashed changes
                 //mvprintw(0,0,"   ");
                 //mvprintw(0,0,"%d",curslocation);  // DEBUG: for getting curret cursor location 
             }
@@ -192,46 +210,58 @@ int checkmines(int location)
     
 
     // left border
-    if((location+1)%fieldwidth==1){
-        if(location==0){    //top left angle
-            if(contains(field.mines, location+1, minescount)){returnmines++;}
-            if(contains(field.mines, location+1+fieldwidth, minescount)){returnmines++;}
-            if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
-        }
-        else if(location==fieldheight*fieldwidth-fieldwidth){      //bottom left angle
-            if(contains(field.mines, location+1, minescount)){returnmines++;}
-            if(contains(field.mines, location+1-fieldwidth, minescount)){returnmines++;}
-            if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
-        }
-        else{   //just on left border
-            if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
-            if(contains(field.mines, location-fieldwidth+1, minescount)){returnmines++;}
-            if(contains(field.mines, location+1, minescount)){returnmines++;}
-            if(contains(field.mines, location+1+fieldwidth, minescount)){returnmines++;}
-            if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
-        }
+    //if((location+1)%fieldwidth==1){
+    if(location==0){    //top left angle
+        if(contains(field.mines, location+1, minescount)){returnmines++;}
+        if(contains(field.mines, location+1+fieldwidth, minescount)){returnmines++;}
+        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
     }
-    else if((location+1)%fieldwidth==0)
+    else if(location==fieldwidth-1) //top right angle
     {
-        if(location==fieldwidth-1) //top right angle
-        {
-            if(contains(field.mines, location-1, minescount)){returnmines++;}
-            if(contains(field.mines, location+fieldwidth-1, minescount)){returnmines++;}
-            if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
-        }
-        else if (location+1==fieldwidth*fieldheight)    //bottom right angle
-        {
-            if(contains(field.mines, location-1, minescount)){returnmines++;}
-            if(contains(field.mines, location-fieldwidth-1, minescount)){returnmines++;}
-            if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
-        }
-        else{   //just on the right border
-            if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
-            if(contains(field.mines, location-fieldwidth-1, minescount)){returnmines++;}
-            if(contains(field.mines, location-1, minescount)){returnmines++;}
-            if(contains(field.mines, location-1+fieldwidth, minescount)){returnmines++;}
-            if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
-        }
+        if(contains(field.mines, location-1, minescount)){returnmines++;}
+        if(contains(field.mines, location+fieldwidth-1, minescount)){returnmines++;}
+        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
+    }
+    else if(location==fieldheight*fieldwidth-fieldwidth){      //bottom left angle
+        if(contains(field.mines, location+1, minescount)){returnmines++;}
+        if(contains(field.mines, location+1-fieldwidth, minescount)){returnmines++;}
+        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
+    }
+    else if (location==fieldwidth*fieldheight-1)    //bottom right angle
+    {
+        if(contains(field.mines, location-1, minescount)){returnmines++;}
+        if(contains(field.mines, location-fieldwidth-1, minescount)){returnmines++;}
+        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
+    }
+    else if (location%fieldwidth==0){   // left border
+        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
+        if(contains(field.mines, location-fieldwidth+1, minescount)){returnmines++;}
+        if(contains(field.mines, location+1, minescount)){returnmines++;}
+        if(contains(field.mines, location+1+fieldwidth, minescount)){returnmines++;}
+        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
+    }
+    else if (location%fieldwidth==fieldwidth-1){   // right border
+        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
+        if(contains(field.mines, location-fieldwidth-1, minescount)){returnmines++;}
+        if(contains(field.mines, location-1, minescount)){returnmines++;}
+        if(contains(field.mines, location-1+fieldwidth, minescount)){returnmines++;}
+        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
+    }
+    else if (location<fieldwidth) //top border
+    {
+        if(contains(field.mines, location-1, minescount)){returnmines++;}
+        if(contains(field.mines, location+1, minescount)){returnmines++;}
+        if(contains(field.mines, location-1+fieldwidth, minescount)){returnmines++;}
+        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
+        if(contains(field.mines, location+fieldwidth+1, minescount)){returnmines++;}
+    }
+    else if (location>=fieldheight*fieldwidth-fieldwidth) // bottom border
+    {
+        if(contains(field.mines, location-1, minescount)){returnmines++;}
+        if(contains(field.mines, location+1, minescount)){returnmines++;}
+        if(contains(field.mines, location-1-fieldwidth, minescount)){returnmines++;}
+        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
+        if(contains(field.mines, location-fieldwidth+1, minescount)){returnmines++;}
     }
     else{
         //nonborder
@@ -244,6 +274,15 @@ int checkmines(int location)
         if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
         if(contains(field.mines, location+1+fieldwidth, minescount)){returnmines++;}
     }
+    
+    //}
+    //else if((location+1)%fieldwidth==0) // right angle
+    //{
+        
+        
+       
+    //}
+    
     
     return returnmines;
 }
@@ -258,6 +297,29 @@ int parseLocation(int location, char type){
     }
 }
 
+<<<<<<< Updated upstream
+=======
+int revealtilesinarr(int arraynum)
+{
+    if(field.showncount<=field.qtyfreetiles&&!contains(field.shownfreetiles, arraynum, field.showncount))
+    {
+        int* tempptr = NULL;
+        while(checkifnulls(tempptr=realloc(field.shownfreetiles, (field.showncount+1)*sizeof(int))));
+        field.shownfreetiles = tempptr;
+        field.shownfreetiles[field.showncount] = arraynum;
+        ++field.showncount;
+        for (int i = 0;i<=field.freetiles[0][arraynum-1]; ++i){
+            mvprintw(parseLocation(field.freetiles[arraynum][i], 'y'), parseLocation(field.freetiles[arraynum][i], 'x'), "0");
+        }
+        return showclosetiles(arraynum);
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+>>>>>>> Stashed changes
 int handlechecktiles(int location)
 {
     int arraynum;
@@ -281,9 +343,13 @@ int handlechecktiles(int location)
             mvprintw(parseLocation(field.freetiles[arraynum][i], 'y'), parseLocation(field.freetiles[arraynum][i], 'x'), "0");
         }
         move(parseLocation(location, 'y'), parseLocation(location, 'x'));
+<<<<<<< Updated upstream
         curs_set(2);
         //showclosetiles(arraynum); // DOESNT YET WORK
         return field.freetiles[0][arraynum-1];
+=======
+        return (field.freetiles[0][arraynum-1]+1)+revealtilesinarr(arraynum);
+>>>>>>> Stashed changes
     }
     
 }
@@ -314,7 +380,12 @@ int generateheatmap()
 int generateemptygroups()
 {
     int counter = 0;
+<<<<<<< Updated upstream
     size_t msize = 1;
+=======
+    int **tempptr = NULL;
+    int *tempptrs = NULL;
+>>>>>>> Stashed changes
     
     field.freetiles = malloc(sizeof(int)*msize);
     field.freetiles[0] = malloc(sizeof(int)); // used arrays and their sizes
@@ -323,16 +394,25 @@ int generateemptygroups()
     while(counter<fieldheight*fieldwidth){
         if (field.heatmap[counter]==0){
             if(field.freetiles[0][0]==-1){   // just for the start
+<<<<<<< Updated upstream
                 field.freetiles = realloc(field.freetiles, (++msize)*sizeof(int));
                 field.freetiles[1] = malloc(sizeof(int));
                 field.freetiles[1][0] = counter;
                 field.freetiles[0][0]=1;
                 field.qtyfreetiles++;
+=======
+                while(checkifnull(tempptr = realloc(field.freetiles, (++field.qtyfreetiles+1)*sizeof(int*))));
+                field.freetiles = tempptr;
+                field.freetiles[1] = malloc(sizeof(int));
+                field.freetiles[1][0] = counter;
+                field.freetiles[0][0]=0;
+>>>>>>> Stashed changes
             }
             else
             {
                 int found = 0;
                 for(int i=1;(i<=field.qtyfreetiles)&&!found;++i)
+<<<<<<< Updated upstream
                 {
                     //for (int f=0; f<field.freetiles[0][i-1];++f)
                     //{
@@ -357,6 +437,32 @@ int generateemptygroups()
                     field.freetiles[0][field.qtyfreetiles-1]=field.freetiles[0][field.qtyfreetiles]+1;
                     grouped++;
                     //field.qtyfreetiles++;
+=======
+                {                  
+                    if(findpath(field.freetiles[i][0], counter)==1||findpath(counter, field.freetiles[i][0])==1)
+                    {
+                        tempptrs=NULL;
+                        field.freetiles[0][i-1] = field.freetiles[0][i-1]+1;
+                        while(checkifnulls(tempptrs = realloc(field.freetiles[i], (field.freetiles[0][i-1]+1)*sizeof(int))));
+                        field.freetiles[i] = tempptrs;
+                        field.freetiles[i][field.freetiles[0][i-1]] = counter;
+                        ++found;
+                        break;
+                    }
+                }
+                if(found==0)
+                {
+                    tempptr = NULL;
+                    tempptrs = NULL;
+                    ++field.qtyfreetiles;
+                    while(checkifnull(tempptr = realloc(field.freetiles, (field.qtyfreetiles+1)*sizeof(int*))));
+                    field.freetiles = tempptr;
+                    field.freetiles[field.qtyfreetiles] = malloc(sizeof(int));    //allocate a new array with one int(counter), increase qtyfreetiles (used arrays)
+                    field.freetiles[field.qtyfreetiles][0]=counter;
+                    while(checkifnulls(tempptrs = realloc(field.freetiles[0], field.qtyfreetiles*sizeof(int))));
+                    field.freetiles[0] = tempptrs;
+                    field.freetiles[0][field.qtyfreetiles-1]=0;
+>>>>>>> Stashed changes
                 }
             }
             grouped--;
@@ -441,14 +547,41 @@ int revealmines()
 /*int showclosetiles(int arraynum)
 {
     curs_set(0);
+<<<<<<< Updated upstream
     for(int i = 0; i<field.freetiles[0][arraynum-1];++i)    //DOESNT YET WORK
+=======
+    int detectcnt = 0;          // TODO: ADD A BREAKPOINT HERE, MAY HELP WITH DEBUGGING. GOOD LUCK!
+ 
+    for(int i = 0; i<=field.freetiles[0][arraynum-1];++i)
+>>>>>>> Stashed changes
     {
         if(field.freetiles[arraynum][i]==0){ //top left
             for(int f = 0; f<4;++f)
             {
                 if(field.heatmap[field.freetiles[arraynum][i]+f%2+f/2*fieldwidth]!=0)
                 {
+<<<<<<< Updated upstream
                     mvprintw(parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]+f%2+f/2*fieldwidth]);
+=======
+                    if(mvinch(parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'x'))=='M'){detectcnt++;}
+                    assert(field.heatmap[field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2)]!=255);
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2)]);
+                }
+                else
+                {
+                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
+                    {
+                        for(int x = 1; x<=field.qtyfreetiles; ++x)
+                        {
+                            if (x==arraynum){continue;}
+                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
+                            {
+                                detectcnt+=revealtilesinarr(x);
+                                break;
+                            }
+                        }
+                    }
+>>>>>>> Stashed changes
                 }
             }
         }
@@ -457,7 +590,28 @@ int revealmines()
             {
                 if(field.heatmap[field.freetiles[arraynum][i]-1+f%2+f/2*fieldwidth]!=0)
                 {
+<<<<<<< Updated upstream
                     mvprintw(parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1+f%2+f/2*fieldwidth]);
+=======
+                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'x'))=='M'){detectcnt++;}
+                    assert(field.heatmap[field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2)]!=255);
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2)]);
+                }
+                else
+                {
+                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
+                    {
+                        for(int x = 1; x<=field.qtyfreetiles; ++x)
+                        {
+                            if (x==arraynum){continue;}
+                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
+                            {
+                                detectcnt+=revealtilesinarr(x);
+                                break;
+                            }
+                        }
+                    }
+>>>>>>> Stashed changes
                 }
             }
         }
@@ -466,7 +620,28 @@ int revealmines()
             {
                 if(field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+f/2*fieldwidth]!=0)
                 {
+<<<<<<< Updated upstream
                     mvprintw(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+f/2*fieldwidth]);
+=======
+                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'))=='M'){detectcnt++;}
+                    assert(field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2)]!=255);
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2)]);
+                }
+                else
+                {
+                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
+                    {
+                        for(int x = 1; x<=field.qtyfreetiles; ++x)
+                        {
+                            if (x==arraynum){continue;}
+                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
+                            {
+                                detectcnt+=revealtilesinarr(x);
+                                break;
+                            }
+                        }
+                    }
+>>>>>>> Stashed changes
                 }
             }
         }
@@ -475,7 +650,28 @@ int revealmines()
             {
                 if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+f/2*fieldwidth]!=0)
                 {
+<<<<<<< Updated upstream
                     mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+f/2*fieldwidth]);
+=======
+                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'x'))=='M'){detectcnt++;}
+                    assert(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2)]!=255);
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2)]);
+                }
+                else
+                {
+                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
+                    {
+                        for(int x = 1; x<=field.qtyfreetiles; ++x)
+                        {
+                            if (x==arraynum){continue;}
+                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
+                            {
+                                detectcnt+=revealtilesinarr(x);
+                                break;
+                            }
+                        }
+                    }
+>>>>>>> Stashed changes
                 }
             }
         }
@@ -484,8 +680,30 @@ int revealmines()
             {
                 if(field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+f/2*fieldwidth]!=0)
                 {
+<<<<<<< Updated upstream
                     mvprintw(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+f/2*fieldwidth]);
                 }
+=======
+                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'))=='M'){detectcnt++;}
+                    assert(field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2)]!=255);
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2)]);
+                }
+                else
+                {
+                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
+                    {
+                        for(int x = 1; x<=field.qtyfreetiles; ++x)
+                        {
+                            if (x==arraynum){continue;}
+                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
+                            {
+                                detectcnt+=revealtilesinarr(x);
+                                break;
+                            }
+                        }
+                    }
+                }   
+>>>>>>> Stashed changes
             }
         }
         else if(field.freetiles[arraynum][i]==fieldwidth*fieldheight-1){ //right
@@ -493,7 +711,28 @@ int revealmines()
             {
                 if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+f/2*fieldwidth]!=0)
                 {
+<<<<<<< Updated upstream
                     mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*f/2, 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*f/2, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+f/2*fieldwidth]);
+=======
+                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'x'))=='M'){detectcnt++;}
+                    assert(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2)]!=255);
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2)]);
+                }
+                else
+                {
+                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
+                    {
+                        for(int x = 1; x<=field.qtyfreetiles; ++x)
+                        {
+                            if (x==arraynum){continue;}
+                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
+                            {
+                                detectcnt+=revealtilesinarr(x);
+                                break;
+                            }
+                        }
+                    }
+>>>>>>> Stashed changes
                 }
             }
         }
@@ -502,7 +741,28 @@ int revealmines()
             {
                 if(field.heatmap[field.freetiles[arraynum][i]-1+f%3+f/3*fieldwidth]!=0)
                 {
+<<<<<<< Updated upstream
                     mvprintw(parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*f/3, 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*f/3, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1+f%3+f/3*fieldwidth]);
+=======
+                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'x'))=='M'){detectcnt++;}
+                    assert(field.heatmap[field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3)]!=255);
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3)]);
+                }
+                else
+                {
+                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), field.freetiles[0][arraynum-1]+1))
+                    {
+                        for(int x = 1; x<=field.qtyfreetiles; ++x)
+                        {
+                            if (x==arraynum){continue;}
+                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), field.freetiles[0][x-1]+1))
+                            {
+                                detectcnt+=revealtilesinarr(x);
+                                break;
+                            }
+                        }
+                    }
+>>>>>>> Stashed changes
                 }
             }
         }
@@ -511,7 +771,28 @@ int revealmines()
             {
                 if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+f/3*fieldwidth]!=0)
                 {
+<<<<<<< Updated upstream
                     mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*f/3, 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*f/3, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+f/3*fieldwidth]);
+=======
+                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%3+fieldwidth*(f/3), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%3+fieldwidth*(f/3), 'x'))=='M'){detectcnt++;}
+                    assert(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=255);
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
+                }
+                else
+                {
+                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][arraynum-1]+1))
+                    {
+                        for(int x = 1; x<=field.qtyfreetiles; ++x)
+                        {
+                            if (x==arraynum){continue;}
+                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][x-1]+1))
+                            {
+                                detectcnt+=revealtilesinarr(x);
+                                break;
+                            }
+                        }
+                    }
+>>>>>>> Stashed changes
                 }
             }
         }
@@ -521,7 +802,28 @@ int revealmines()
             {
                 if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+f/3*fieldwidth]!=0)
                 {
+<<<<<<< Updated upstream
                     mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*f/3, 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*f/3, 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+f/3*fieldwidth]);
+=======
+                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))=='M'){detectcnt++;}
+                    assert(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=255);
+                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
+                }
+                else
+                {
+                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][arraynum-1]+1))
+                    {
+                        for(int x = 1; x<=field.qtyfreetiles; ++x)
+                        {
+                            if (x==arraynum){continue;}
+                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][x-1]+1))
+                            {
+                                detectcnt+=revealtilesinarr(x);
+                                break;
+                            }
+                        }
+                    }
+>>>>>>> Stashed changes
                 }
             }
         }
