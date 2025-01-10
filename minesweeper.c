@@ -130,8 +130,6 @@ int main()
         while(cont)
         {
             while(cont){
-                mvprintw(0,0,"    ");
-                mvprintw(0,0,"%d", mvinch(curslocation/fieldwidth+maxy/2-fieldheight/2,curslocation%fieldwidth+maxx/2-fieldwidth/2));
                 move(curslocation/fieldwidth+maxy/2-fieldheight/2,curslocation%fieldwidth+maxx/2-fieldwidth/2);
                 int ch = getch();
                 if(curslocation/fieldwidth>0&&ch==259){curslocation-=fieldwidth;} // UP
