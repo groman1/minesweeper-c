@@ -156,7 +156,7 @@ int main()
                 //mvprintw(0,0,"   ");
                 //mvprintw(0,0,"%d",curslocation);  // DEBUG: for getting curret cursor location
             }
-            if((inch()==' '&&!contains(field.shownfreetiles, curslocation, field.showncount))||(inch()=='M'||inch()==1312))
+            if(inch()==32||inch()==1312)
             {
                 if(field.heatmap[curslocation]!=255)
                 {
@@ -350,10 +350,10 @@ int revealtilesinarr(int arraynum)
         ++field.showncount;
         activatecolorpair(EMPTY);
         for (int i = 0;i<=field.freetiles[0][arraynum-1]; ++i){
-            mvprintw(parseLocation(field.freetiles[arraynum][i], 'y'), parseLocation(field.freetiles[arraynum][i], 'x'), " "/*"0"*/);
+            mvprintw(parseLocation(field.freetiles[arraynum][i], 'y'), parseLocation(field.freetiles[arraynum][i], 'x'), " ");
         }
         deactivatecolorpair(EMPTY);
-        return showclosetiles(arraynum);
+        return showclosetiles(arraynum)+field.freetiles[0][arraynum-1]+1;
     }
     else
     {
@@ -384,7 +384,7 @@ int handlechecktiles(int location)
         curs_set(0);
 
         move(parseLocation(location, 'y'), parseLocation(location, 'x'));
-        return (field.freetiles[0][arraynum-1]+1)+revealtilesinarr(arraynum);
+        return revealtilesinarr(arraynum);
     }
 
 }
