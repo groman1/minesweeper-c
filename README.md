@@ -8,7 +8,7 @@ Insert - mark mine\
 \
 \
 How to compile\
-\
+
 1. Use the pre-compiled configure executable (or building it from configure.c in src folder)\
-\
+
 2. Compiling minesweeper.c using gcc with -lncurses flag
