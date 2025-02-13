@@ -1,15 +1,32 @@
-#include <curses.h>
+#include <ncurses.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
 
 #define MARKED 4
 #define NEARBY 3
 #define EMPTY 2
 #define MINE 1
 #define NORMAL 5
+
+
+#ifndef MARKED1
+
+#define MARKED1 7
+#define MARKED2 4
+#define NEARBY1 7
+#define NEARBY2 3 
+#define EMPTY1 7
+#define EMPTY2 2
+#define MINE1 1
+#define MINE2 0
+
+#endif
+
+#define mvcurs move(curslocation/fieldwidth+maxy/2-fieldheight/2,curslocation%fieldwidth+maxx/2-fieldwidth/2);
 
 struct field
 {
@@ -25,18 +42,18 @@ int fieldheight, fieldwidth, minescount, maxx, maxy;
 int selectedsquares;
 struct field field;
 int grouped = 0;
-int coloravailable;
+int coloravailable, counting;
 
 int genrandom();
-int genfield();
-int revealmines();
-int generateheatmap();
-int generateemptygroups();
-int activatecolorpair(int colorpair);
-int deactivatecolorpair(int colorpair);
+void genfield();
+void revealmines();
+void generateheatmap();
+void generateemptygroups();
+void activatecolorpair(int colorpair);
+void deactivatecolorpair(int colorpair);
 int checkmines(int location);
 int showclosetiles(int arraynum);
-int draw_frame(int maxx, int maxy);
+void draw_frame(int maxx, int maxy);
 int findpath(int pos1, int pos2);
 int handlechecktiles(int location);
 int contains(int *arr, int chkval, int len);
@@ -50,7 +67,7 @@ int main()
     large: 24 by 24, 90 mines\n\
     manual: or choose your own settings: ");
     char presets[8];
-    scanf("%s", &presets);
+    scanf("%s", presets);
 
     if(!strcmp(presets,"small")){
         fieldwidth = 8;
@@ -94,10 +111,10 @@ int main()
         init_color(COLOR_YELLOW, 700,700,0);
         init_color(COLOR_WHITE, 800,800,800);
 
-        init_pair(MINE,COLOR_RED,COLOR_BLACK);//mine
-        init_pair(EMPTY, COLOR_WHITE, COLOR_GREEN);//empty
-        init_pair(NEARBY, COLOR_WHITE, COLOR_YELLOW);//close
-        init_pair(MARKED, COLOR_WHITE, COLOR_BLUE);//marked
+        init_pair(MINE,MINE1,MINE2);//mine
+        init_pair(EMPTY, EMPTY1, EMPTY2);//empty
+        init_pair(NEARBY, NEARBY1, NEARBY2);//close
+        init_pair(MARKED, MARKED1, MARKED2);//marked
         init_pair(NORMAL, COLOR_WHITE, COLOR_BLACK);//normal
     }
 
@@ -130,7 +147,7 @@ int main()
         while(cont)
         {
             while(cont){
-                move(curslocation/fieldwidth+maxy/2-fieldheight/2,curslocation%fieldwidth+maxx/2-fieldwidth/2);
+                mvcurs;
                 int ch = getch();
                 if(curslocation/fieldwidth>0&&ch==259){curslocation-=fieldwidth;} // UP
                 else if(curslocation/fieldwidth<fieldheight-1&&ch==258){curslocation+=fieldwidth;} // DOWN
@@ -197,7 +214,7 @@ int main()
     return 0;
 }
 
-int activatecolorpair(int colorpair)
+void activatecolorpair(int colorpair)
 {
     if (coloravailable)
     {
@@ -205,7 +222,7 @@ int activatecolorpair(int colorpair)
     }
 }
 
-int deactivatecolorpair(int colorpair)
+void deactivatecolorpair(int colorpair)
 {
     if (coloravailable)
     {
@@ -213,7 +230,7 @@ int deactivatecolorpair(int colorpair)
     }
 }
 
-int genfield()
+void genfield()
 {
     field.mines = malloc(sizeof(int)*minescount);
     int buff;
@@ -223,17 +240,14 @@ int genfield()
         if(!contains(field.mines, buff, i)){field.mines[i]=buff;}
         else(--i);
     }
-
-    return 0;
-
 }
 
 int genrandom(){
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME,&ts);
     srand(ts.tv_nsec);
-    float ret = (float)rand()/INT32_MAX;  //should be something smaller than 1
-    return (ret*fieldheight*fieldwidth);
+    int ret = rand()%(fieldwidth*fieldheight);  // maybe will be better
+    return (ret);
 }
 
 int checkifnull(int **ptr){
@@ -337,6 +351,7 @@ int parseLocation(int location, char type){
     {
         return location/fieldwidth+maxy/2-fieldheight/2;
     }
+    else{return 0;}
 }
 
 int revealtilesinarr(int arraynum)
@@ -389,7 +404,7 @@ int handlechecktiles(int location)
 
 }
 
-int draw_frame(int maxx, int maxy)
+void draw_frame(int maxx, int maxy)
 {
     for(int i = 0; i<fieldwidth; ++i,mvprintw(maxy/2-fieldheight/2-1,maxx/2-fieldwidth/2-1+i, "="));
 
@@ -401,7 +416,7 @@ int draw_frame(int maxx, int maxy)
     for(int i = 0; i<fieldwidth; ++i,mvprintw(maxy/2+fieldheight/2+fieldheight%2,maxx/2-fieldwidth/2-1+i, "="));
 }
 
-int generateheatmap()
+void generateheatmap()
 {
     field.heatmap = malloc(sizeof(unsigned char)*fieldheight*fieldwidth);
     //printw("   ");
@@ -412,7 +427,7 @@ int generateheatmap()
     }
 }
 
-int generateemptygroups()
+void generateemptygroups()
 {
     int counter = 0;
     int **tempptr = NULL;
@@ -608,7 +623,7 @@ int findpath(int pos1, int pos2)
     else { return 0; }
 }
 
-int revealmines()
+void revealmines()
 {
     activatecolorpair(MINE);
     for(int i = 0; i<minescount;++i){
