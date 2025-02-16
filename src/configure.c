@@ -334,9 +334,7 @@ target_link_libraries(minesweeper-c PRIVATE ncurses)", markedcolors[0], markedco
             endwin();
             system("cmake CMakeLists.txt");
             system("make");
-            system("rm -rf CMakeFiles cmake_install.cmake CMakeCache.txt");
-            //system("make");
-            //system("rf -rf CMakeFiles cmake_install.cmake CMakeCache.txt");
+            return 0;
         }
         else
         {

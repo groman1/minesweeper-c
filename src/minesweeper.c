@@ -26,8 +26,6 @@
 
 #endif
 
-#define mvcurs move(curslocation/fieldwidth+maxy/2-fieldheight/2,curslocation%fieldwidth+maxx/2-fieldwidth/2);
-
 struct field
 {
     int *mines;
@@ -103,6 +101,7 @@ int main()
     initscr();
     noecho();
     keypad(stdscr,1);
+    if(maxx<fieldwidth||maxy<fieldheight){printf("The field is too big, exiting...");free(field.mines);endwin();return 1;}
     if(has_colors()){
         coloravailable = 1;
         start_color();
@@ -140,14 +139,12 @@ int main()
         }*/
 
         int cont = 1;
-        getmaxyx(stdscr, maxy, maxx);
-        if(maxx<fieldwidth||maxy<fieldheight){printf("The field is too big, exiting...");free(field.mines);endwin();return 1;}
         draw_frame(maxx, maxy);
 
         while(cont)
         {
             while(cont){
-                mvcurs;
+                move(curslocation/fieldwidth+maxy/2-fieldheight/2,curslocation%fieldwidth+maxx/2-fieldwidth/2);
                 int ch = getch();
                 if(curslocation/fieldwidth>0&&ch==259){curslocation-=fieldwidth;} // UP
                 else if(curslocation/fieldwidth<fieldheight-1&&ch==258){curslocation+=fieldwidth;} // DOWN
