@@ -102,7 +102,7 @@ int main()
     noecho();
     keypad(stdscr,1);
     getmaxyx(stdscr, maxy, maxx);
-    if(maxx<fieldwidth||maxy<fieldheight){printf("The field is too big, exiting...");free(field.mines);endwin();return 1;}
+    if(maxx<fieldwidth+2||maxy<fieldheight+2){printf("The field is too big, exiting...");free(field.mines);endwin();return 1;}
     if(has_colors()){
         coloravailable = 1;
         start_color();

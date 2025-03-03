@@ -173,7 +173,7 @@ void choose_color(int *colorpos, int *currcolor, char previewchar)
     int currkey;
     while ((currkey=getch())!=32)
     {
-        
+        getmaxyx(stdscr, maxy, maxx);
         if(currkey==259&&colorpos[*currcolor]>0) //up
         {
             unhighlight_choice(*currcolor, colorpos[*currcolor]);
@@ -232,9 +232,9 @@ int main()
     if(!has_colors())
     {
         curs_set(0);
-        mvprintw(maxy/2, maxx>56?maxx/2-28:0,"Color isn't available, do you want to compile now? (y/n)");
-        if(getch()=='y') {system("cmake CMakeLists.txt"); system("make"); endwin(); return 0;}
-        else {endwin();return 0;}
+        endwin();
+        system("gcc src/minesweeper.c -lncurses -o minesweeper-c");
+        return 0;
     }
     else
     {
@@ -245,8 +245,8 @@ int main()
         init_color(COLOR_WHITE, 800,800,800);
 
         curs_set(0);
-        mvprintw(0, maxx>32?maxx/2-16:0, "Minesweeper Color Configuration");
-        mvprintw(2, maxx>20?maxx/2-10:0, "Choose mine colors:"); 
+        mvprintw(0, maxx/2-16, "Minesweeper Color Configuration");
+        mvprintw(2, maxx/2-10, "Choose mine colors:"); 
         int colorpos[2] = {1,0}, currcolor = 0;
         int minecolors[2], emptycolors[2], nearbycolors[2], markedcolors[2];
         
@@ -264,8 +264,8 @@ int main()
         clear();
         refresh();
 
-        mvprintw(0, maxx>32?maxx/2-16:0, "Minesweeper Color Configuration");
-        mvprintw(2, maxx>26?maxx/2-13:0, "Choose empty tile colors:");
+        mvprintw(0, maxx/2-16, "Minesweeper Color Configuration");
+        mvprintw(2, maxx/2-13, "Choose empty tile colors:");
         colorpos[0] = 7, colorpos[1] = 2, currcolor = 0;
         
         printInstructions();
@@ -281,10 +281,8 @@ int main()
         clear();
         refresh();
 
-
-
-        mvprintw(0, maxx>32?maxx/2-16:0, "Minesweeper Color Configuration");
-        mvprintw(2, maxx>26?maxx/2-13:0, "Choose nearby tile colors:"); 
+        mvprintw(0, maxx/2-16, "Minesweeper Color Configuration");
+        mvprintw(2, maxx/2-13, "Choose nearby tile colors:"); 
         colorpos[0] = 7, colorpos[1] = 3, currcolor = 0;
         
         printInstructions();
@@ -300,8 +298,8 @@ int main()
         clear();
         refresh();
 
-        mvprintw(0, maxx>32?maxx/2-16:0, "Minesweeper Color Configuration");
-        mvprintw(2, maxx>26?maxx/2-13:0, "Choose marked tile colors:"); 
+        mvprintw(0, maxx/2-16, "Minesweeper Color Configuration");
+        mvprintw(2, maxx/2-13, "Choose marked tile colors:"); 
         colorpos[0] = 7, colorpos[1] = 4, currcolor = 0;
         
         printInstructions();
@@ -316,31 +314,12 @@ int main()
 
         clear();
         refresh();
+        endwin();
 
-        FILE *cmakelists =  fopen("CMakeLists.txt", "w");
-        fprintf(cmakelists, "cmake_minimum_required(VERSION 3.5.0)\n\
-project(minesweeper-c VERSION 0.1.0 LANGUAGES C)\n\
-set (CMAKE_C_FLAGS \"${CMAKE_C_FLAGS} -Wall -Werror -lncurses \")\n\
-add_executable(minesweeper-c src/minesweeper.c)\n\
-target_compile_definitions(minesweeper-c PRIVATE MARKED1=%d MARKED2=%d NEARBY1=%d NEARBY2=%d EMPTY1=%d EMPTY2=%d MINE1=%d MINE2=%d)\n\
-target_include_directories(minesweeper-c PRIVATE /usr/local/include PRIVATE /usr/include)\n\
-target_link_libraries(minesweeper-c PRIVATE ncurses)", markedcolors[0], markedcolors[1], nearbycolors[0], nearbycolors[1], emptycolors[0], emptycolors[1], minecolors[0], minecolors[1]);
-        fclose(cmakelists);
-            
-        mvprintw(maxy/2, maxx/2-29, "CMakeLists.txt is done, do you want to compile now? (y/n)");
-
-        if(getch()=='y')
-        {
-            endwin();
-            system("cmake CMakeLists.txt");
-            system("make");
-            return 0;
-        }
-        else
-        {
-            endwin();
-            return 0;
-        }
+        char *command;
+        sprintf(command, "gcc src/minesweeper.c -lncurses -o minesweeper-c -D MARKED1=%d -D MARKED2=%d -D NEARBY1=%d -D NEARBY2=%d -D EMPTY1=%d -D EMPTY2=%d -D MINE1=%d -D MINE2=%d", markedcolors[0], markedcolors[1], nearbycolors[0], nearbycolors[1], emptycolors[0], emptycolors[1], minecolors[0], minecolors[1]);
+        system(command);
+        return 0;
     }
     endwin();
     return 1;
