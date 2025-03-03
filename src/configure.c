@@ -3,6 +3,9 @@
 
 #define HIGHLIGHT 1
 #define UNHIGHLIGHT 2
+#ifndef BIN
+#define BIN 0
+#endif
 
 int maxx, maxy;
 
@@ -234,6 +237,7 @@ int main()
         curs_set(0);
         endwin();
         system("gcc src/minesweeper.c -lncurses -o minesweeper-c");
+        if(BIN) system("rm -r src");
         return 0;
     }
     else
@@ -319,6 +323,7 @@ int main()
         char *command;
         sprintf(command, "gcc src/minesweeper.c -lncurses -o minesweeper-c -D MARKED1=%d -D MARKED2=%d -D NEARBY1=%d -D NEARBY2=%d -D EMPTY1=%d -D EMPTY2=%d -D MINE1=%d -D MINE2=%d", markedcolors[0], markedcolors[1], nearbycolors[0], nearbycolors[1], emptycolors[0], emptycolors[1], minecolors[0], minecolors[1]);
         system(command);
+        if(BIN) system("rm -r src");
         return 0;
     }
     endwin();
