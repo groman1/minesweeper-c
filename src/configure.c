@@ -1,4 +1,4 @@
-#include <curses.h>
+#include <ncurses.h>
 #include <stdlib.h>
 
 #define HIGHLIGHT 1
@@ -231,12 +231,15 @@ int main()
     keypad(stdscr,1);
 
     getmaxyx(stdscr, maxy, maxx);
+    char *outputprefix = BIN==1?"/usr/bin/":"";
 
     if(!has_colors())
     {
         curs_set(0);
         endwin();
-        system("gcc src/minesweeper.c -lncurses -o minesweeper-c");
+        char command[69];
+        sprintf(command, "gcc %ssrc/minesweeper.c -lncurses -o %sminesweeper-c", outputprefix, outputprefix);
+        system(command);
         if(BIN) system("rm -r src");
         return 0;
     }
@@ -320,8 +323,8 @@ int main()
         refresh();
         endwin();
 
-        char *command;
-        sprintf(command, "gcc src/minesweeper.c -lncurses -o minesweeper-c -D MARKED1=%d -D MARKED2=%d -D NEARBY1=%d -D NEARBY2=%d -D EMPTY1=%d -D EMPTY2=%d -D MINE1=%d -D MINE2=%d", markedcolors[0], markedcolors[1], nearbycolors[0], nearbycolors[1], emptycolors[0], emptycolors[1], minecolors[0], minecolors[1]);
+        char command[167];
+        sprintf(command, "gcc %ssrc/minesweeper.c -lncurses -o %sminesweeper-c -D MARKED1=%d -D MARKED2=%d -D NEARBY1=%d -D NEARBY2=%d -D EMPTY1=%d -D EMPTY2=%d -D MINE1=%d -D MINE2=%d", outputprefix, outputprefix, markedcolors[0], markedcolors[1], nearbycolors[0], nearbycolors[1], emptycolors[0], emptycolors[1], minecolors[0], minecolors[1]);
         system(command);
         if(BIN) system("rm -r src");
         return 0;
