@@ -246,7 +246,7 @@ int genrandom(){
     clock_gettime(CLOCK_REALTIME,&ts);
     srand(ts.tv_nsec);
     int ret = rand()%(fieldwidth*fieldheight);  // maybe will be better
-    return (ret);
+    return ret;
 }
 
 int checkifnull(int **ptr){
@@ -271,74 +271,25 @@ int contains(int *arr, int chkval, int len)
     return 0;
 }
 
+int onthesamerow(int id, int row)
+{
+	return id/fieldwidth==row;
+}
+
 int checkmines(int location)
 {
     int returnmines = 0;
     if(contains(field.mines, location, minescount)){return -1;}
 
-    if(location==0){    //top left angle
-        if(contains(field.mines, location+1, minescount)){returnmines++;}
-        if(contains(field.mines, location+1+fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
-    }
-    else if(location==fieldwidth-1) //top right angle
-    {
-        if(contains(field.mines, location-1, minescount)){returnmines++;}
-        if(contains(field.mines, location+fieldwidth-1, minescount)){returnmines++;}
-        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
-    }
-    else if(location==fieldheight*fieldwidth-fieldwidth){      //bottom left angle
-        if(contains(field.mines, location+1, minescount)){returnmines++;}
-        if(contains(field.mines, location+1-fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
-    }
-    else if (location==fieldwidth*fieldheight-1)    //bottom right angle
-    {
-        if(contains(field.mines, location-1, minescount)){returnmines++;}
-        if(contains(field.mines, location-fieldwidth-1, minescount)){returnmines++;}
-        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
-    }
-    else if (location%fieldwidth==0){   // left border
-        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location-fieldwidth+1, minescount)){returnmines++;}
-        if(contains(field.mines, location+1, minescount)){returnmines++;}
-        if(contains(field.mines, location+1+fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
-    }
-    else if (location%fieldwidth==fieldwidth-1){   // right border
-        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location-fieldwidth-1, minescount)){returnmines++;}
-        if(contains(field.mines, location-1, minescount)){returnmines++;}
-        if(contains(field.mines, location-1+fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
-    }
-    else if (location<fieldwidth) //top border
-    {
-        if(contains(field.mines, location-1, minescount)){returnmines++;}
-        if(contains(field.mines, location+1, minescount)){returnmines++;}
-        if(contains(field.mines, location-1+fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location+fieldwidth+1, minescount)){returnmines++;}
-    }
-    else if (location>=fieldheight*fieldwidth-fieldwidth) // bottom border
-    {
-        if(contains(field.mines, location-1, minescount)){returnmines++;}
-        if(contains(field.mines, location+1, minescount)){returnmines++;}
-        if(contains(field.mines, location-1-fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location-fieldwidth+1, minescount)){returnmines++;}
-    }
-    else{
-        //nonborder
-        if(contains(field.mines, location-1-fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location-fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location-fieldwidth+1, minescount)){returnmines++;}
-        if(contains(field.mines, location-1, minescount)){returnmines++;}
-        if(contains(field.mines, location+1, minescount)){returnmines++;}
-        if(contains(field.mines, location+fieldwidth-1, minescount)){returnmines++;}
-        if(contains(field.mines, location+fieldwidth, minescount)){returnmines++;}
-        if(contains(field.mines, location+1+fieldwidth, minescount)){returnmines++;}
-    }
+    for(int i = 0; i<9; ++i)
+	{
+		if (i==4) continue;
+		if(onthesamerow(location-1-fieldwidth+i%3+fieldwidth*(i/3), location/fieldwidth+(i/3-1)))
+		{
+			if (contains(field.mines, location-1-fieldwidth+i%3+fieldwidth*(i/3), minescount)) ++returnmines;
+		}
+	}
+
     return returnmines;
 }
 
@@ -627,10 +578,7 @@ void revealmines()
     deactivatecolorpair(MINE);
 }
 
-int onthesamerow(int id, int row)
-{
-	return id/fieldwidth==row;
-}
+
 
 int showclosetiles(int arraynum)
 {
