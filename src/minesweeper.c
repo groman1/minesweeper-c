@@ -630,267 +630,46 @@ void revealmines()
     deactivatecolorpair(MINE);
 }
 
+int onthesamerow(int id, int row)
+{
+	return id/fieldwidth==row;
+}
+
 int showclosetiles(int arraynum)
 {
     curs_set(0);
-    int detectcnt = 0;          // TODO: ADD A BREAKPOINT HERE, MAY HELP WITH DEBUGGING. GOOD LUCK!
-
-    for(int i = 0; i<=field.freetiles[0][arraynum-1];++i)
-    {
-        if(field.freetiles[arraynum][i]==0){ //top left
-            for(int f = 0; f<4;++f)
-            {
-                if(field.heatmap[field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2)]!=0)
-                {
-                    if(mvinch(parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'x'))==1312){detectcnt++;}
-                    assert(field.heatmap[field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2)]!=255);
-                    activatecolorpair(NEARBY);
-                    mvprintw(parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2)]);
-                    deactivatecolorpair(NEARBY);
-                }
-                else
-                {
-                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
-                    {
-                        for(int x = 1; x<=field.qtyfreetiles; ++x)
-                        {
-                            if (x==arraynum){continue;}
-                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
-                            {
-                                detectcnt+=revealtilesinarr(x);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else if(field.freetiles[arraynum][i]==fieldwidth-1){ //top right
-            for(int f = 0; f<4;++f)
-            {
-                if(field.heatmap[field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2)]!=0)
-                {
-                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'x'))==1312){detectcnt++;}
-                    assert(field.heatmap[field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2)]!=255);
-                    activatecolorpair(NEARBY);
-                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2)]);
-                    deactivatecolorpair(NEARBY);
-                }
-                else
-                {
-                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
-                    {
-                        for(int x = 1; x<=field.qtyfreetiles; ++x)
-                        {
-                            if (x==arraynum){continue;}
-                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
-                            {
-                                detectcnt+=revealtilesinarr(x);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else if(field.freetiles[arraynum][i]==fieldwidth*fieldheight-fieldwidth){ //bottom left
-            for(int f = 0; f<4;++f)
-            {
-                if(field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2)]!=0)
-                {
-                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'))==1312){detectcnt++;}
-                    assert(field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2)]!=255);
-                    activatecolorpair(NEARBY);
-                    mvprintw(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2)]);
-                    deactivatecolorpair(NEARBY);
-                }
-                else
-                {
-                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
-                    {
-                        for(int x = 1; x<=field.qtyfreetiles; ++x)
-                        {
-                            if (x==arraynum){continue;}
-                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
-                            {
-                                detectcnt+=revealtilesinarr(x);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else if(field.freetiles[arraynum][i]==fieldwidth*fieldheight-1){ //bottom right
-            for(int f = 0; f<4;++f)
-            {
-                if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2)]!=0)
-                {
-                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'x'))==1312){detectcnt++;}
-                    assert(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2)]!=255);
-                    activatecolorpair(NEARBY);
-                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2)]);
-                    deactivatecolorpair(NEARBY);
-                }
-                else
-                {
-                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
-                    {
-                        for(int x = 1; x<=field.qtyfreetiles; ++x)
-                        {
-                            if (x==arraynum){continue;}
-                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
-                            {
-                                detectcnt+=revealtilesinarr(x);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else if(field.freetiles[arraynum][i]%fieldwidth==0){ //left
-            for(int f = 0; f<6;++f)
-            {
-                if(field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2)]!=0)
-                {
-                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'))==1312){detectcnt++;}
-                    assert(field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2)]!=255);
-                    activatecolorpair(NEARBY);
-                    mvprintw(parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2)]);
-                    deactivatecolorpair(NEARBY);
-                }
-                else
-                {
-                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
-                    {
-                        for(int x = 1; x<=field.qtyfreetiles; ++x)
-                        {
-                            if (x==arraynum){continue;}
-                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
-                            {
-                                detectcnt+=revealtilesinarr(x);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else if(field.freetiles[arraynum][i]%fieldwidth==fieldwidth-1){ //right
-            for(int f = 0; f<6;++f)
-            {
-                if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2)]!=0)
-                {
-                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%2+fieldwidth*(f/2), 'x'))==1312){detectcnt++;}
-                    assert(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2)]!=255);
-                    activatecolorpair(NEARBY);
-                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2)]);
-                    deactivatecolorpair(NEARBY);
-                }
-                else
-                {
-                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][arraynum-1]+1))
-                    {
-                        for(int x = 1; x<=field.qtyfreetiles; ++x)
-                        {
-                            if (x==arraynum){continue;}
-                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1-fieldwidth+f%2+fieldwidth*(f/2), field.freetiles[0][x-1]+1))
-                            {
-                                detectcnt+=revealtilesinarr(x);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else if(field.freetiles[arraynum][i]<fieldwidth){ //top
-            for(int f = 0; f<6;++f)
-            {
-                if(field.heatmap[field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3)]!=0)
-                {
-                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'x'))==1312){detectcnt++;}
-                    assert(field.heatmap[field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3)]!=255);
-                    activatecolorpair(NEARBY);
-                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3)]);
-                    deactivatecolorpair(NEARBY);
-                }
-                else
-                {
-                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), field.freetiles[0][arraynum-1]+1))
-                    {
-                        for(int x = 1; x<=field.qtyfreetiles; ++x)
-                        {
-                            if (x==arraynum){continue;}
-                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1+f%3+fieldwidth*(f/3), field.freetiles[0][x-1]+1))
-                            {
-                                detectcnt+=revealtilesinarr(x);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else if(field.freetiles[arraynum][i]>=fieldheight*fieldwidth-fieldwidth){ //bottom
-            for(int f = 0; f<6;++f)
-            {
-                if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=0)
-                {
-                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%3+fieldwidth*(f/3), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%3+fieldwidth*(f/3), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-fieldwidth-1+f%3+fieldwidth*(f/3), 'x'))==1312){detectcnt++;}
-                    assert(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=255);
-                    activatecolorpair(NEARBY);
-                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
-                    deactivatecolorpair(NEARBY);
-                }
-                else
-                {
-                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][arraynum-1]+1))
-                    {
-                        for(int x = 1; x<=field.qtyfreetiles; ++x)
-                        {
-                            if (x==arraynum){continue;}
-                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][x-1]+1))
-                            {
-                                detectcnt+=revealtilesinarr(x);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else    //center
-        {
-            for (int f = 0; f<9;++f)
-            {
-                if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=0)
-                {
-                    if(mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))==1312){detectcnt++;}
-                    assert(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=255);
-                    activatecolorpair(NEARBY);
-                    mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
-                    deactivatecolorpair(NEARBY);
-                }
-                else
-                {
-                    if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][arraynum-1]+1))
-                    {
-                        for(int x = 1; x<=field.qtyfreetiles; ++x)
-                        {
-                            if (x==arraynum){continue;}
-                            if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][x-1]+1))
-                            {
-                                detectcnt+=revealtilesinarr(x);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    int detectcnt = 0;  
+    for (int i = 0; i<=field.freetiles[0][arraynum-1];++i)
+	{
+		for (int f = 0; f<9;++f)
+		{
+			if(onthesamerow(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[arraynum][i]/fieldwidth+(f/3-1)))
+			{
+				if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=0)
+				{
+					if(mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))==1312){detectcnt++;}
+					activatecolorpair(NEARBY);
+					mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
+					deactivatecolorpair(NEARBY);
+				}
+				else
+				{
+					if(!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][arraynum-1]+1))
+					{
+						for(int x = 1; x<=field.qtyfreetiles; ++x)
+						{
+							if (x==arraynum){continue;}
+							if(contains(field.freetiles[x], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][x-1]+1))
+							{
+								detectcnt+=revealtilesinarr(x);
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
     curs_set(2);
     return detectcnt;
 }
