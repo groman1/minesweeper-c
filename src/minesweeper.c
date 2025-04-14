@@ -41,6 +41,7 @@ int selectedsquares;
 struct field field;
 int grouped = 0;
 int coloravailable, counting;
+int drawlocation[2];
 
 int genrandom();
 void genfield();
@@ -341,15 +342,10 @@ int checkmines(int location)
     return returnmines;
 }
 
-int parseLocation(int location, char type){
-    if(type=='x'){
-        return location%fieldwidth+maxx/2-fieldwidth/2;
-    }
-    else if (type=='y')
-    {
-        return location/fieldwidth+maxy/2-fieldheight/2;
-    }
-    else{return 0;}
+void parseLocation(int location)
+{
+	drawlocation[0] = location/fieldwidth+maxy/2-fieldheight/2;
+	drawlocation[1] = location%fieldwidth+maxx/2-fieldwidth/2;
 }
 
 int revealtilesinarr(int arraynum)
@@ -363,7 +359,8 @@ int revealtilesinarr(int arraynum)
         ++field.showncount;
         activatecolorpair(EMPTY);
         for (int i = 0;i<=field.freetiles[0][arraynum-1]; ++i){
-            mvprintw(parseLocation(field.freetiles[arraynum][i], 'y'), parseLocation(field.freetiles[arraynum][i], 'x'), " ");
+			parseLocation(field.freetiles[arraynum][i]);
+            mvprintw(drawlocation[0], drawlocation[1], " ");
         }
         deactivatecolorpair(EMPTY);
         return showclosetiles(arraynum)+field.freetiles[0][arraynum-1]+1;
@@ -395,8 +392,8 @@ int handlechecktiles(int location)
             }
         }
         curs_set(0);
-
-        move(parseLocation(location, 'y'), parseLocation(location, 'x'));
+		parseLocation(location);
+        move(drawlocation[0], drawlocation[1]);
         return revealtilesinarr(arraynum);
     }
 
@@ -647,9 +644,10 @@ int showclosetiles(int arraynum)
 			{
 				if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=0)
 				{
-					if(mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))==' '||mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))=='M'||mvinch(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'))==1312){detectcnt++;}
+					parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3));
+					if(mvinch(drawlocation[0], drawlocation[1])==' '||mvinch(drawlocation[0], drawlocation[1])=='M'||mvinch(drawlocation[0], drawlocation[1])==1312){detectcnt++;}
 					activatecolorpair(NEARBY);
-					mvprintw(parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'y'), parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), 'x'), "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
+					mvprintw(drawlocation[0], drawlocation[1], "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
 					deactivatecolorpair(NEARBY);
 				}
 				else
