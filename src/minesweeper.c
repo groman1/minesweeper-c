@@ -273,7 +273,7 @@ int contains(int *arr, int chkval, int len)
 
 int onthesamerow(int id, int row)
 {
-	return id/fieldwidth==row;
+	return (id/fieldwidth==row)&&(id>0)&&(id<fieldwidth*fieldheight);
 }
 
 int checkmines(int location)
