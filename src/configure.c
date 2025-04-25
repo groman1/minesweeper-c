@@ -170,7 +170,7 @@ void unhighlight_choice(int column, int index)
     }
 }
 
-void choose_color(int *colorpos, int *currcolor, char previewchar)
+int choose_color(int *colorpos, int *currcolor, char previewchar)
 {
     print_preview(colorpos, previewchar);
     int currkey;
@@ -217,11 +217,16 @@ void choose_color(int *colorpos, int *currcolor, char previewchar)
             --(*currcolor);
             highlight_choice(*currcolor, colorpos[*currcolor]);
         }
+		else if(currkey==114)
+		{
+			return 1;
+		}
         
         print_preview(colorpos, previewchar);
         refresh();
         
     }
+	return 0;
 }
 
 int main()
@@ -250,7 +255,7 @@ int main()
         init_pair(2, COLOR_WHITE, COLOR_BLACK);
         init_color(COLOR_YELLOW, 700,700,0);
         init_color(COLOR_WHITE, 800,800,800);
-
+		mineselect:
         curs_set(0);
         mvprintw(0, maxx/2-16, "Minesweeper Color Configuration");
         mvprintw(2, maxx/2-10, "Choose mine colors:"); 
@@ -280,7 +285,7 @@ int main()
         highlight_choice(0, colorpos[0]);
         highlight_choice(1, colorpos[1]);
 
-        choose_color(colorpos, &currcolor, ' ');
+        if (choose_color(colorpos, &currcolor, ' ')) goto mineselect;
 
         emptycolors[0] = colorpos[0];
         emptycolors[1] = colorpos[1];
@@ -297,7 +302,7 @@ int main()
         highlight_choice(0, colorpos[0]);
         highlight_choice(1, colorpos[1]);
 
-        choose_color(colorpos, &currcolor, '1');
+        if (choose_color(colorpos, &currcolor, '1')) goto mineselect;
 
         nearbycolors[0] = colorpos[0];
         nearbycolors[1] = colorpos[1];
@@ -314,7 +319,7 @@ int main()
         highlight_choice(0, colorpos[0]);
         highlight_choice(1, colorpos[1]);
 
-        choose_color(colorpos, &currcolor, 'M');
+        if (choose_color(colorpos, &currcolor, 'M')) goto mineselect;
 
         markedcolors[0] = colorpos[0];
         markedcolors[1] = colorpos[1];
