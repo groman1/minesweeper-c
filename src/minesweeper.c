@@ -1,16 +1,16 @@
-#include <ncurses.h>
+#include "rawtui.h"
+#include <stdint.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <unistd.h>
 
 #define MARKED 4
 #define NEARBY 3
 #define EMPTY 2
 #define MINE 1
-#define NORMAL 5
+#define UNOPENED 0
 
 
 #ifndef MARKED1
@@ -36,12 +36,12 @@ struct field
     int showncount;
 };
 
-int fieldheight, fieldwidth, minescount, maxx, maxy;
+uint16_t fieldheight, fieldwidth, minescount, maxx, maxy;
 int selectedsquares;
 struct field field;
-int grouped = 0;
-int coloravailable, counting;
+int coloravailable;
 int drawlocation[2];
+uint8_t *fieldbuffer;
 
 int genrandom();
 void genfield();
@@ -49,14 +49,14 @@ void revealmines();
 void generateheatmap();
 void generateemptygroups();
 void activatecolorpair(int colorpair);
-void deactivatecolorpair(int colorpair);
+void deactivatecolorpair();
 int checkmines(int location);
 int showclosetiles(int arraynum);
 void draw_frame(int maxx, int maxy);
 int findpath(int pos1, int pos2);
 int handlechecktiles(int location);
 int contains(int *arr, int chkval, int len);
-
+void fillFieldBuffer();
 
 int main()
 {
@@ -88,47 +88,37 @@ int main()
     else
     {
         printf("Enter the width of the playfield: ");
-        scanf("%d", &fieldwidth);
+        scanf("%hu", &fieldwidth);
         printf("Enter the height of the playfield: ");
-        scanf("%d", &fieldheight);
+        scanf("%hu", &fieldheight);
         printf("Enter the quantity of mines: ");
-        scanf("%d", &minescount);
+        scanf("%hu", &minescount);
     }
-
-
 
     if(minescount>fieldheight*fieldwidth){printf("Too many mines, exiting..."); return 1;}
+	coloravailable = 1;
 
-    initscr();
-    noecho();
-    keypad(stdscr,1);
-    getmaxyx(stdscr, maxy, maxx);
-    if(maxx<fieldwidth+2||maxy<fieldheight+2){printf("The field is too big, exiting...");free(field.mines);endwin();return 1;}
-    if(has_colors()){
-        coloravailable = 1;
-        start_color();
-        init_color(COLOR_RED, 700,0,0);
-        init_color(COLOR_BLUE, 0,0,700);
-        init_color(COLOR_YELLOW, 700,700,0);
-        init_color(COLOR_WHITE, 800,800,800);
-
-        init_pair(MINE,MINE1,MINE2);//mine
-        init_pair(EMPTY, EMPTY1, EMPTY2);//empty
-        init_pair(NEARBY, NEARBY1, NEARBY2);//close
-        init_pair(MARKED, MARKED1, MARKED2);//marked
-        init_pair(NORMAL, COLOR_WHITE, COLOR_BLACK);//normal
-    }
+    init();
+    getTermXY(&maxy, &maxx);
+    if(maxx<fieldwidth+2||maxy<fieldheight+2){printf("The field is too big, exiting...");free(field.mines);deinit();return 1;}
+	initcolorpair(MINE,MINE1,MINE2);//mine
+	initcolorpair(EMPTY, EMPTY1, EMPTY2);//empty
+	initcolorpair(NEARBY, NEARBY1, NEARBY2);//close
+	initcolorpair(MARKED, MARKED1, MARKED2);//marked
 
     int stop = 0;
     while (!stop)
     {
         clear();
-        curs_set(2);
+		setcursor(1);
         int curslocation = 0;
         selectedsquares = 0;
 
         field.showncount = 0;
         field.shownfreetiles = malloc(sizeof(int)*(field.showncount+1));
+
+		fieldbuffer = realloc(fieldbuffer, fieldheight*fieldwidth*sizeof(uint8_t));
+		fillFieldBuffer();
 
         genfield();
         generateheatmap();
@@ -147,45 +137,47 @@ int main()
         {
             while(cont){
                 move(curslocation/fieldwidth+maxy/2-fieldheight/2,curslocation%fieldwidth+maxx/2-fieldwidth/2);
-                int ch = getch();
-                if(curslocation/fieldwidth>0&&ch==259){curslocation-=fieldwidth;} // UP
-                else if(curslocation/fieldwidth<fieldheight-1&&ch==258){curslocation+=fieldwidth;} // DOWN
-                else if(curslocation%fieldwidth>0&&ch==260){curslocation-=1;} // LEFT
-                else if(curslocation%fieldwidth<fieldwidth-1&&ch==261){curslocation+=1;} // RIGHT
-                else if(ch==113){endwin();free(field.mines); return 0;} //q
+                int ch = in();
+                if(curslocation/fieldwidth>0&&ch==65){curslocation-=fieldwidth;} // UP
+                else if(curslocation/fieldwidth<fieldheight-1&&ch==66){curslocation+=fieldwidth;} // DOWN
+                else if(curslocation%fieldwidth>0&&ch==68){curslocation-=1;} // LEFT
+                else if(curslocation%fieldwidth<fieldwidth-1&&ch==67){curslocation+=1;} // RIGHT
+                else if(ch==113){clear(); move(0,0); deinit(); return 0;} //q
                 else if(ch==32){break;} //space
-                else if(ch==331){//insert
-                    if(inch()==1101)
+                else if(ch==126){//insert
+                    if(fieldbuffer[curslocation]=='M')
                     {
-                        activatecolorpair(NORMAL);
-                        printw(" ");
-                        deactivatecolorpair(NORMAL);
+                        activatecolorpair(UNOPENED);
+                        print(" ");
+						fieldbuffer[curslocation] = ' ';
+                        deactivatecolorpair();
                     }
-                    else if (inch()==32||inch()==1312)
+                    else if (fieldbuffer[curslocation]==' ')
                     {
                         activatecolorpair(MARKED);
-                        printw("M");
-                        deactivatecolorpair(MARKED);
+                        print("M");
+						fieldbuffer[curslocation] = 'M';
+                        deactivatecolorpair();
                     }
                 } 
                 else if(ch==114){cont=0;} //r
                 //mvprintw(0,0,"   ");
-                //mvprintw(0,0,"%d",curslocation);  // DEBUG: for getting curret cursor location
+                //mvprintw(0,0,"%d",curslocation);  // DEBUG: for getting current cursor location
             }
-            if(inch()==32||inch()==1312)
+            if (fieldbuffer[curslocation]==' ')
             {
                 if(field.heatmap[curslocation]!=255)
                 {
                     selectedsquares+=handlechecktiles(curslocation);
-                    curs_set(2);
+                    setcursor(2);
                 }
                 else
                 {
                     revealmines();
-                    mvprintw(1,maxx/2-4,"You lost");
-                    curs_set(0);
+                    setcursor(0);
+					moveprint(1,maxx/2-4,"You lost");
                     cont = 0;
-                    if(getch()!=114) {stop = 1;}
+                    if(in()!=114) {stop = 1;}
                 }
 
             }
@@ -193,10 +185,10 @@ int main()
             if(selectedsquares==fieldwidth*fieldheight-minescount)
             {
                 revealmines();
-                mvprintw(1,maxx/2-8,"Congratulations!");
-                curs_set(0);
+                moveprint(1,maxx/2-8,"Congratulations!");
+                setcursor(0);
                 cont = 0;
-                if(getch()!=114) {stop = 1;}
+                if(in()!=114) {stop = 1;}
             }
 
         }
@@ -209,23 +201,34 @@ int main()
         free(field.freetiles);
         field.qtyfreetiles = 0;
     }
-    endwin();
+	clear();
+	move(0,0);
+	setcursor(1);
+	deinit();
     return 0;
+}
+
+void fillFieldBuffer()
+{
+	for (int i = 0; i<fieldwidth*fieldheight; ++i)
+	{
+		fieldbuffer[i] = 32;
+	}
 }
 
 void activatecolorpair(int colorpair)
 {
     if (coloravailable)
     {
-        attron(COLOR_PAIR(colorpair));
+        wrattr(COLORPAIR(colorpair));
     }
 }
 
-void deactivatecolorpair(int colorpair)
+void deactivatecolorpair()
 {
     if (coloravailable)
     {
-        attroff(COLOR_PAIR(colorpair));
+		wrattr(NORMAL);
     }
 }
 
@@ -311,9 +314,10 @@ int revealtilesinarr(int arraynum)
         activatecolorpair(EMPTY);
         for (int i = 0;i<=field.freetiles[0][arraynum-1]; ++i){
 			parseLocation(field.freetiles[arraynum][i]);
-            mvprintw(drawlocation[0], drawlocation[1], " ");
+            moveprint(drawlocation[0], drawlocation[1], " ");
+			fieldbuffer[field.freetiles[arraynum][i]] = 'O';
         }
-        deactivatecolorpair(EMPTY);
+        deactivatecolorpair();
         return showclosetiles(arraynum)+field.freetiles[0][arraynum-1]+1;
     }
     else
@@ -328,8 +332,9 @@ int handlechecktiles(int location)
 
     if(field.heatmap[location]!=0){
         activatecolorpair(NEARBY);
-        printw("%d", field.heatmap[location]);
-        deactivatecolorpair(NEARBY);
+        dprintf(STDOUT_FILENO, "%d", field.heatmap[location]);
+		fieldbuffer[location] = 'O';
+        deactivatecolorpair();
         return 1;
     }
     else
@@ -342,7 +347,7 @@ int handlechecktiles(int location)
                 break;
             }
         }
-        curs_set(0);
+        setcursor(0);
 		parseLocation(location);
         move(drawlocation[0], drawlocation[1]);
         return revealtilesinarr(arraynum);
@@ -352,24 +357,22 @@ int handlechecktiles(int location)
 
 void draw_frame(int maxx, int maxy)
 {
-    for(int i = 0; i<fieldwidth; ++i,mvprintw(maxy/2-fieldheight/2-1,maxx/2-fieldwidth/2-1+i, "="));
+    for(int i = 0; i<fieldwidth; ++i,moveprint(maxy/2-fieldheight/2-1,maxx/2-fieldwidth/2-1+i, "="));
 
     for(int i = 0;i<fieldheight+2;++i){
-        mvprintw(maxy/2-fieldheight/2+i-1,maxx/2-fieldwidth/2-2, "||");
-        mvprintw(maxy/2-fieldheight/2+i-1,maxx/2+fieldwidth/2+fieldwidth%2, "||");
+        moveprint(maxy/2-fieldheight/2+i-1,maxx/2-fieldwidth/2-2, "||");
+        moveprint(maxy/2-fieldheight/2+i-1,maxx/2+fieldwidth/2+fieldwidth%2, "||");
     }
 
-    for(int i = 0; i<fieldwidth; ++i,mvprintw(maxy/2+fieldheight/2+fieldheight%2,maxx/2-fieldwidth/2-1+i, "="));
+    for(int i = 0; i<fieldwidth; ++i,moveprint(maxy/2+fieldheight/2+fieldheight%2,maxx/2-fieldwidth/2-1+i, "="));
 }
 
 void generateheatmap()
 {
     field.heatmap = malloc(sizeof(unsigned char)*fieldheight*fieldwidth);
-    //printw("   ");
     for (int i = 0;i < fieldheight*fieldwidth; ++i)
     {
         field.heatmap[i] = checkmines(i);
-        //printw("%d ", field.heatmap[i]);     DEBUG: for getting the mines locations
     }
 }
 
@@ -573,16 +576,14 @@ void revealmines()
 {
     activatecolorpair(MINE);
     for(int i = 0; i<minescount;++i){
-        mvprintw(maxy/2-fieldheight/2+field.mines[i]/fieldwidth, maxx/2-fieldwidth/2+field.mines[i]%fieldwidth, "+");
+        moveprint(maxy/2-fieldheight/2+field.mines[i]/fieldwidth, maxx/2-fieldwidth/2+field.mines[i]%fieldwidth, "+");
     }
-    deactivatecolorpair(MINE);
+    deactivatecolorpair();
 }
-
-
 
 int showclosetiles(int arraynum)
 {
-    curs_set(0);
+    setcursor(0);
     int detectcnt = 0;  
     for (int i = 0; i<=field.freetiles[0][arraynum-1];++i)
 	{
@@ -593,10 +594,12 @@ int showclosetiles(int arraynum)
 				if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=0)
 				{
 					parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3));
-					if(mvinch(drawlocation[0], drawlocation[1])==' '||mvinch(drawlocation[0], drawlocation[1])=='M'||mvinch(drawlocation[0], drawlocation[1])==1312){detectcnt++;}
+					if(fieldbuffer[field.freetiles[arraynum][i]]==' '||fieldbuffer[field.freetiles[arraynum][i]]=='M'){detectcnt++;}
 					activatecolorpair(NEARBY);
-					mvprintw(drawlocation[0], drawlocation[1], "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
-					deactivatecolorpair(NEARBY);
+					move(drawlocation[0], drawlocation[1]);
+					fieldbuffer[field.freetiles[arraynum][i]] = 'O';
+					dprintf(STDOUT_FILENO, "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
+					deactivatecolorpair();
 				}
 				else
 				{
@@ -616,6 +619,6 @@ int showclosetiles(int arraynum)
 			}
 		}
 	}
-    curs_set(2);
+    setcursor(1);
     return detectcnt;
 }

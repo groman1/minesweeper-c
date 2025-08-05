@@ -1,7 +1,6 @@
 main:
-	cc src/configure.c -lncurses -o configure
+	cc src/configure.c src/rawtui.c -o configure
 	./configure
-	rm configure
 
 install:
 	sudo mv minesweeper-c ~/.local/bin/minesweeper-c
