@@ -124,10 +124,10 @@ int main()
         generateheatmap();
         generateemptygroups();
 
-        /*printw("\n");
+        /*print("\n");
         for(int i = 0; i<minescount;++i)
         {
-            printw("%d\n", field.mines[i]);          //     For testing the mines locations
+            dprintf(STDOUT_FILENO, "%d\n", field.mines[i]);          //     For testing the mines locations
         }*/
 
         int cont = 1;
@@ -142,7 +142,7 @@ int main()
                 else if(curslocation/fieldwidth<fieldheight-1&&ch==66){curslocation+=fieldwidth;} // DOWN
                 else if(curslocation%fieldwidth>0&&ch==68){curslocation-=1;} // LEFT
                 else if(curslocation%fieldwidth<fieldwidth-1&&ch==67){curslocation+=1;} // RIGHT
-                else if(ch==113){clear(); move(0,0); deinit(); return 0;} //q
+                else if(ch==3||ch==113){clear(); move(0,0); deinit(); return 0;} //q
                 else if(ch==32){break;} //space
                 else if(ch==126){//insert
                     if(fieldbuffer[curslocation]=='M')
@@ -161,8 +161,6 @@ int main()
                     }
                 } 
                 else if(ch==114){cont=0;} //r
-                //mvprintw(0,0,"   ");
-                //mvprintw(0,0,"%d",curslocation);  // DEBUG: for getting current cursor location
             }
             if (fieldbuffer[curslocation]==' ')
             {
@@ -201,6 +199,7 @@ int main()
         free(field.freetiles);
         field.qtyfreetiles = 0;
     }
+	free(fieldbuffer);
 	clear();
 	move(0,0);
 	setcursor(1);
@@ -594,12 +593,15 @@ int showclosetiles(int arraynum)
 				if(field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=0)
 				{
 					parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3));
-					if(fieldbuffer[field.freetiles[arraynum][i]]==' '||fieldbuffer[field.freetiles[arraynum][i]]=='M'){detectcnt++;}
-					activatecolorpair(NEARBY);
-					move(drawlocation[0], drawlocation[1]);
-					fieldbuffer[field.freetiles[arraynum][i]] = 'O';
-					dprintf(STDOUT_FILENO, "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
-					deactivatecolorpair();
+					if(fieldbuffer[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]==' '||fieldbuffer[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]=='M')
+					{
+						detectcnt++;
+						activatecolorpair(NEARBY);
+						move(drawlocation[0], drawlocation[1]);
+						fieldbuffer[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)] = 'O';
+						dprintf(STDOUT_FILENO, "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
+						deactivatecolorpair();
+					}
 				}
 				else
 				{

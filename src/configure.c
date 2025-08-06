@@ -130,7 +130,7 @@ int choose_color(int *colorpos, int *currcolor, char previewchar)
 		{
 			return 1;
 		}
-		else if(currkey==113)
+		else if(currkey==113||currkey==3)
 		{
 			setcursor(1);
 			move(0,0);
