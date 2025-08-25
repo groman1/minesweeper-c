@@ -137,15 +137,22 @@ int main()
         {
             while(cont){
                 move(curslocation/fieldwidth+maxy/2-fieldheight/2,curslocation%fieldwidth+maxx/2-fieldwidth/2);
-                int ch = in();
-                if(curslocation/fieldwidth>0&&ch==65){curslocation-=fieldwidth;} // UP
-                else if(curslocation/fieldwidth<fieldheight-1&&ch==66){curslocation+=fieldwidth;} // DOWN
-                else if(curslocation%fieldwidth>0&&ch==68){curslocation-=1;} // LEFT
-                else if(curslocation%fieldwidth<fieldwidth-1&&ch==67){curslocation+=1;} // RIGHT
-                else if(ch==3||ch==113){clear(); move(0,0); deinit(); return 0;} //q
-                else if(ch==32){break;} //space
-                else if(ch==126){//insert
-                    if(fieldbuffer[curslocation]=='M')
+                int ch = inesc();
+                if(curslocation/fieldwidth>0&&ch==188)
+				{ curslocation-=fieldwidth; } // UP
+                else if(curslocation/fieldwidth<fieldheight-1&&ch==189)
+				{ curslocation+=fieldwidth; } // DOWN
+                else if(curslocation%fieldwidth>0&&ch==191)
+				{ --curslocation; } // LEFT
+                else if(curslocation%fieldwidth<fieldwidth-1&&ch==190)
+				{ ++curslocation; } // RIGHT
+                else if(ch==3||ch==113)
+				{ clear(); move(0,0); deinit(); return 0; } //q
+                else if(ch==32)
+				{ break; } //space
+                else if(ch==182) //insert
+				{
+                    if (fieldbuffer[curslocation]=='M')
                     {
                         activatecolorpair(UNOPENED);
                         print(" ");
@@ -160,7 +167,7 @@ int main()
                         deactivatecolorpair();
                     }
                 } 
-                else if(ch==114){cont=0;} //r
+                else if (ch==114){cont=0;} //r
             }
             if (fieldbuffer[curslocation]==' ')
             {
