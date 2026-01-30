@@ -3,7 +3,7 @@ main:
 	./configure
 
 install:
-	sudo mv minesweeper-c /usr/bin/
+	mv minesweeper-c /usr/bin/
 
 clean:
-	sudo rm ~/.local/bin/minesweeper-c
+	rm -f configure minesweeper-c

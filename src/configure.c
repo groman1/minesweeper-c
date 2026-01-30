@@ -59,7 +59,7 @@ void printInstructions()
 void print_preview(int *locations, char text)
 {
     initcolorpair(4,*(locations), *(locations+1));
-    wrattr(COLORPAIR(4));
+    wrcolorpair(4);
 	move(maxy/2, maxx/2);
 	dprintf(STDOUT_FILENO, "%c", text);
 	wrattr(NORMAL);
@@ -67,7 +67,8 @@ void print_preview(int *locations, char text)
 
 void highlight_choice(int column, int index, uint8_t on)
 {
-	wrattr(COLORPAIR(0)|on?REVERSE:0);
+	wrattr(on*REVERSE);
+	wrcolorpair(0);
     switch (index)
     {
         case 0: moveprint(4,maxx/4-3+(maxx/4*2)*column, "Black"); break;
