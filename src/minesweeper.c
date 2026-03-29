@@ -58,44 +58,72 @@ uint8_t contains(uint32_t *arr, uint32_t chkval, uint32_t len);
 void fillFieldBuffer();
 void drawMarkerCount(int used, int total);
 
-int main()
+int main(int argc, char **argv)
 {
-    printf("Select from the available presets:\n\
-    small: 8 by 8, 10 mines\n\
-    medium: 16 by 16, 40 mines\n\
-    large: 24 by 24, 90 mines\n\
-    manual: or choose your own settings: ");
-    char presets[8];
-	fgets(presets, 8, stdin);
+	if (argc==1)
+	{
+		printf("Select from the available presets:\n\
+		small: 8 by 8, 10 mines\n\
+		medium: 16 by 16, 40 mines\n\
+		large: 24 by 24, 90 mines\n\
+		manual: or choose your own settings: ");
+		char presets[8];
+		fgets(presets, 8, stdin);
 
-    if (!strcmp(presets, "small\n")){
-        fieldwidth = 8;
-        fieldheight = 8;
-        minescount = 10;
-    }
-    else if (!strcmp(presets, "medium\n"))
-    {
-        fieldwidth = 16;
-        fieldheight = 16;
-        minescount = 40;
-    }
-    else if (!strcmp(presets, "large\n"))
-    {
-        fieldwidth = 24;
-        fieldheight = 24;
-        minescount = 90;
-    }
-    else
-    {
-        printf("Enter the width of the playfield: ");
-        scanf("%hu", &fieldwidth);
-        printf("Enter the height of the playfield: ");
-        scanf("%hu", &fieldheight);
-        printf("Enter the quantity of mines: ");
-        scanf("%hu", &minescount);
-    }
+		if (!strcmp(presets, "small\n")){
+			fieldwidth = 8;
+			fieldheight = 8;
+			minescount = 10;
+		}
+		else if (!strcmp(presets, "medium\n"))
+		{
+			fieldwidth = 16;
+			fieldheight = 16;
+			minescount = 40;
+		}
+		else if (!strcmp(presets, "large\n"))
+		{
+			fieldwidth = 24;
+			fieldheight = 24;
+			minescount = 90;
+		}
+		else
+		{
+			printf("Enter the width of the playfield: ");
+			scanf("%hu", &fieldwidth);
+			printf("Enter the height of the playfield: ");
+			scanf("%hu", &fieldheight);
+			printf("Enter the quantity of mines: ");
+			scanf("%hu", &minescount);
+		}
+	}
+	else if (argc==2)
+	{
+		if (!strcmp(argv[1], "small")){
+			fieldwidth = 8;
+			fieldheight = 8;
+			minescount = 10;
+		}
+		else if (!strcmp(argv[1], "medium"))
+		{
+			fieldwidth = 16;
+			fieldheight = 16;
+			minescount = 40;
+		}
+		else if (!strcmp(argv[1], "large"))
+		{
+			fieldwidth = 24;
+			fieldheight = 24;
+			minescount = 90;
+		}
+		else
+		{
+			printf("Options:\nLaunch with %s fieldsize or %s\nFieldsize options:\n- small (8x8, 10 mines)\n- medium (16x16, 40 mines)\n- large(24x24, 90 mines\n", argv[0], argv[0]);
+			return 0;
+		}
+	}
 
-    getTermXY(&maxy, &maxx);
+	getTermXY(&maxy, &maxx);
     if (maxx<fieldwidth+2||maxy<fieldheight+2)
 	{
 		free(field.mines);
@@ -109,7 +137,7 @@ int main()
 		return 1;
 	}
 
-    initinline();
+    init();
 	initcolorpair(MINE, MINE1, MINE2); // mine
 	initcolorpair(EMPTY, EMPTY1, EMPTY2); // empty
 	initcolorpair(NEARBY, NEARBY1, NEARBY2); // close
@@ -195,7 +223,7 @@ int main()
                 {
                     revealmines();
                     setcursor(0);
-					moveprint(1, maxx/2-4,"You lost");
+					moveprint(1, maxx/2-4, "You lost");
                     cont = 0;
 					stop = in()!=114;
                 }
@@ -272,7 +300,7 @@ uint8_t checkmines(int location)
 	{
 		if (i==4) continue;
 		if (onthesamerow(getLocation(location, i), location/fieldwidth+(i/3-1)))
-			if (contains(field.mines, location-1-fieldwidth+i%3+fieldwidth*(i/3), minescount))
+			if (contains(field.mines, getLocation(location, i), minescount))
 				++returnmines;
 	}
 
@@ -445,7 +473,7 @@ int showclosetiles(int arraynum)
 					++detectcnt;
 					wrcolorpair(NEARBY);
 					moveToLocation(getLocation(field.freetiles[arraynum][i], f));
-					fieldbuffer[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)] = 'O';
+					fieldbuffer[getLocation(field.freetiles[arraynum][i], f)] = 'O';
 					dprintf(STDOUT_FILENO, "%d", field.heatmap[getLocation(field.freetiles[arraynum][i], f)]);
 					wrcolorpair(0);
 				}
