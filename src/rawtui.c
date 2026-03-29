@@ -37,6 +37,7 @@ void init()
 	struct termios terminal;
 	cfmakeraw(&terminal);
 	tcsetattr(STDIN_FILENO, 0, &terminal);
+	initcolorpair(0, WHITE, BLACK);
 	write(STDOUT_FILENO, "\x1b[?1049h", 8); // alternative buffer
 }
 
@@ -257,4 +258,11 @@ void moveprint(uint16_t y, uint16_t x, char *string)
 {
 	move(y,x);
 	print(string);
+}
+
+void printc(char c)
+{
+	char s[2];
+	s[0] = c;
+	print(s);
 }

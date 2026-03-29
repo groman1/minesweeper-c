@@ -5,9 +5,6 @@
 
 #define HIGHLIGHT 1
 #define UNHIGHLIGHT 2
-#ifndef BIN
-#define BIN 0
-#endif
 
 uint16_t maxx, maxy;
 

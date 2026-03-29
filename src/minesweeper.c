@@ -1,10 +1,11 @@
-#include "rawtui.h"
-#include <stdint.h>
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdint.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
+#include "rawtui.h"
 
 #define MARKED 4
 #define NEARBY 3
@@ -25,20 +26,22 @@
 
 #endif
 
+#define onthesamerow(id, row) (int)(((int)id/(int)fieldwidth==(int)row)&&((id>>31)==0)&&((int)id<fieldwidth*fieldheight))
+#define getLocation(location, counter) (location-1-fieldwidth+counter%3+fieldwidth*(counter/3))
+#define moveToLocation(location) move(location/fieldwidth+maxy/2-fieldheight/2, location%fieldwidth+maxx/2-fieldwidth/2)
+
 struct field
 {
-    int *mines;
-    unsigned char *heatmap;
-    int **freetiles;
-    int qtyfreetiles;
-    int *shownfreetiles;
-    int showncount;
+    uint32_t *mines;
+    uint8_t *heatmap;
+    uint32_t **freetiles;
+	uint32_t *freetileslengths;
+    uint8_t qtyfreetiles;
 };
 
 uint16_t fieldheight, fieldwidth, minescount, maxx, maxy;
 int selectedsquares;
 struct field field;
-int drawlocation[2];
 uint8_t *fieldbuffer;
 
 int genrandom();
@@ -46,12 +49,12 @@ void genfield();
 void revealmines();
 void generateheatmap();
 void generateemptygroups();
-int checkmines(int location);
+uint8_t checkmines(int location);
 int showclosetiles(int arraynum);
 void drawFrame(int maxx, int maxy);
 int findpath(int pos1, int pos2);
 int handlechecktiles(int location);
-int contains(int *arr, int chkval, int len);
+uint8_t contains(uint32_t *arr, uint32_t chkval, uint32_t len);
 void fillFieldBuffer();
 void drawMarkerCount(int used, int total);
 
@@ -63,20 +66,20 @@ int main()
     large: 24 by 24, 90 mines\n\
     manual: or choose your own settings: ");
     char presets[8];
-    scanf("%s", presets);
+	fgets(presets, 8, stdin);
 
-    if (!strcmp(presets,"small")){
+    if (!strcmp(presets, "small\n")){
         fieldwidth = 8;
         fieldheight = 8;
         minescount = 10;
     }
-    else if (!strcmp(presets,"medium"))
+    else if (!strcmp(presets, "medium\n"))
     {
         fieldwidth = 16;
         fieldheight = 16;
         minescount = 40;
     }
-    else if (!strcmp(presets,"large"))
+    else if (!strcmp(presets, "large\n"))
     {
         fieldwidth = 24;
         fieldheight = 24;
@@ -92,17 +95,21 @@ int main()
         scanf("%hu", &minescount);
     }
 
-    if (minescount>fieldheight*fieldwidth){printf("Too many mines, exiting..."); return 1;}
-
-    init();
     getTermXY(&maxy, &maxx);
     if (maxx<fieldwidth+2||maxy<fieldheight+2)
 	{
 		free(field.mines);
-		deinit();
-		printf("The field is too big, exiting...");
+		printf("The field is too big, exiting...\n");
 		return 1;
 	}
+
+    if (minescount>fieldheight*fieldwidth)
+	{
+		printf("Too many mines, exiting...\n");
+		return 1;
+	}
+
+    initinline();
 	initcolorpair(MINE, MINE1, MINE2); // mine
 	initcolorpair(EMPTY, EMPTY1, EMPTY2); // empty
 	initcolorpair(NEARBY, NEARBY1, NEARBY2); // close
@@ -113,35 +120,26 @@ int main()
     {
         clear();
 		setcursor(1);
-        int curslocation = 0, usedMarkers = 0;
+        uint32_t curslocation = 0, usedMarkers = 0;
         selectedsquares = 0;
 
-        field.showncount = 0;
-        field.shownfreetiles = malloc(sizeof(int)*(field.showncount+1));
-
-		fieldbuffer = realloc(fieldbuffer, fieldheight*fieldwidth*sizeof(uint8_t));
+		fieldbuffer = malloc(fieldheight*fieldwidth);
 		fillFieldBuffer();
 
         genfield();
         generateheatmap();
         generateemptygroups();
 
-        /*print("\n");
-        for (int i = 0; i<minescount;++i)
-        {
-            dprintf(STDOUT_FILENO, "%d\n", field.mines[i]);          //     For testing the mines locations
-        }*/
-
         int cont = 1;
         drawFrame(maxx, maxy);
 		drawMarkerCount(usedMarkers, minescount);
 
-        while(cont)
+        while (cont)
         {
-            while(cont)
+            while (1)
 			{
                 move(curslocation/fieldwidth+maxy/2-fieldheight/2,curslocation%fieldwidth+maxx/2-fieldwidth/2);
-                int ch = inesc();
+                uint8_t ch = inesc();
                 if (curslocation/fieldwidth>0&&ch==188)
 					curslocation -= fieldwidth; // UP
                 else if (curslocation/fieldwidth<fieldheight-1&&ch==189)
@@ -150,16 +148,15 @@ int main()
 					--curslocation; // LEFT
                 else if (curslocation%fieldwidth<fieldwidth-1&&ch==190)
 					++curslocation; // RIGHT
-                else if (ch==3||ch==113)
+                else if (ch==3||ch==113) // q
 				{
 					clear();
 					move(0,0);
 					deinit();
 					return 0;
-				} //q
-                else if (ch==32)
-					break; //space
-                else if (ch==182) //insert
+				}
+                else if (ch==32) break; // space
+                else if (ch==182) // insert
 				{
                     if (fieldbuffer[curslocation]=='M')
                     {
@@ -180,22 +177,27 @@ int main()
                         wrcolorpair(0);
                     }
                 } 
-                else if (ch==114){cont=0;} //r
+                else if (ch==114) //r
+				{
+					cont = 0;
+					break;
+				}
             }
+			if (!cont) break;
             if (fieldbuffer[curslocation]==' ')
             {
                 if (field.heatmap[curslocation]!=255)
                 {
-                    selectedsquares+=handlechecktiles(curslocation);
-                    setcursor(2);
+                    selectedsquares += handlechecktiles(curslocation);
+                    setcursor(1);
                 }
                 else
                 {
                     revealmines();
                     setcursor(0);
-					moveprint(1,maxx/2-4,"You lost");
+					moveprint(1, maxx/2-4,"You lost");
                     cont = 0;
-                    if (in()!=114) {stop = 1;}
+					stop = in()!=114;
                 }
 
             }
@@ -203,25 +205,24 @@ int main()
             if (selectedsquares==fieldwidth*fieldheight-minescount)
             {
                 revealmines();
-                moveprint(1,maxx/2-8,"Congratulations!");
+                moveprint(1, maxx/2-8, "Congratulations!");
                 setcursor(0);
                 cont = 0;
-                if (in()!=114) {stop = 1;}
+				stop = in()!=114;
             }
 
         }
         free(field.mines);
         free(field.heatmap);
-        free(field.shownfreetiles);
-        for (int i = 0; i <= field.qtyfreetiles; ++i){
+		free(field.freetileslengths);
+        for (int i = 0; i<field.qtyfreetiles; ++i)
             free(field.freetiles[i]);
-        }
+
         free(field.freetiles);
+		free(fieldbuffer);
         field.qtyfreetiles = 0;
     }
-	free(fieldbuffer);
 	clear();
-	move(0,0);
 	setcursor(1);
 	deinit();
     return 0;
@@ -230,20 +231,18 @@ int main()
 void fillFieldBuffer()
 {
 	for (int i = 0; i<fieldwidth*fieldheight; ++i)
-	{
 		fieldbuffer[i] = 32;
-	}
 }
 
 void genfield()
 {
-    field.mines = malloc(sizeof(int)*minescount);
-    int buff;
+    field.mines = malloc(sizeof(uint32_t)*minescount);
+    uint32_t buff;
     for (int i = 0; i<minescount; ++i)
     {
         buff = genrandom();
-        if (!contains(field.mines, buff, i)){field.mines[i]=buff;}
-        else(--i);
+        if (!contains(field.mines, buff, i)) field.mines[i] = buff;
+        else --i;
     }
 }
 
@@ -256,23 +255,15 @@ int genrandom()
     return ret;
 }
 
-int onthesamerow(int id, int row)
-{
-	return (id/fieldwidth==row)&&(id>0)&&(id<fieldwidth*fieldheight);
-}
-
-int contains(int *arr, int chkval, int len)
+uint8_t contains(uint32_t *arr, uint32_t chkval, uint32_t len)
 {
     for (int i = 0; i<len; ++i)
-    {
-        if (arr[i]==chkval){
+        if (arr[i]==chkval)
             return 1;
-        }
-    }
     return 0;
 }
 
-int checkmines(int location)
+uint8_t checkmines(int location)
 {
     int returnmines = 0;
     if (contains(field.mines, location, minescount)) return -1;
@@ -280,69 +271,51 @@ int checkmines(int location)
     for (int i = 0; i<9; ++i)
 	{
 		if (i==4) continue;
-		if (onthesamerow(location-1-fieldwidth+i%3+fieldwidth*(i/3), location/fieldwidth+(i/3-1)))
-		{
-			if (contains(field.mines, location-1-fieldwidth+i%3+fieldwidth*(i/3), minescount)) ++returnmines;
-		}
+		if (onthesamerow(getLocation(location, i), location/fieldwidth+(i/3-1)))
+			if (contains(field.mines, location-1-fieldwidth+i%3+fieldwidth*(i/3), minescount))
+				++returnmines;
 	}
 
     return returnmines;
 }
 
-void parseLocation(int location)
-{
-	drawlocation[0] = location/fieldwidth+maxy/2-fieldheight/2;
-	drawlocation[1] = location%fieldwidth+maxx/2-fieldwidth/2;
-}
-
 int revealtilesinarr(int arraynum)
 {
-    if (field.showncount<=field.qtyfreetiles&&!contains(field.shownfreetiles, arraynum, field.showncount))
-    {
-        int* tempptr = NULL;
-        while((tempptr=realloc(field.shownfreetiles, (field.showncount+1)*sizeof(int)))==NULL);
-        field.shownfreetiles = tempptr;
-        field.shownfreetiles[field.showncount] = arraynum;
-        ++field.showncount;
-        wrcolorpair(EMPTY);
-        for (int i = 0;i<=field.freetiles[0][arraynum-1]; ++i){
-			parseLocation(field.freetiles[arraynum][i]);
-            moveprint(drawlocation[0], drawlocation[1], " ");
-			fieldbuffer[field.freetiles[arraynum][i]] = 'O';
-        }
-        wrcolorpair(0);
-        return showclosetiles(arraynum)+field.freetiles[0][arraynum-1]+1;
-    }
-    else
-    {
-        return 0;
-    }
+	wrcolorpair(EMPTY);
+	for (int i = 0; i<field.freetileslengths[arraynum]; ++i)
+	{
+		moveToLocation(field.freetiles[arraynum][i]);
+		print(" ");
+		fieldbuffer[field.freetiles[arraynum][i]] = 'O';
+	}
+	wrcolorpair(0);
+	return showclosetiles(arraynum) + field.freetileslengths[arraynum];
 }
 
 int handlechecktiles(int location)
 {
     int arraynum;
 
-    if (field.heatmap[location]!=0){
+    if (field.heatmap[location])
+	{
         wrcolorpair(NEARBY);
-        dprintf(STDOUT_FILENO, "%d", field.heatmap[location]);
+		dprintf(STDOUT_FILENO, "%d", field.heatmap[location]);
 		fieldbuffer[location] = 'O';
         wrcolorpair(0);
         return 1;
     }
     else
     {
-        for (int i = 1;i<=field.qtyfreetiles;++i)
+        for (int i = 0; i<field.qtyfreetiles; ++i)
         {
-            if (contains(field.freetiles[i], location, field.freetiles[0][i-1]+1))
+            if (contains(field.freetiles[i], location, field.freetileslengths[i]))
             {
                 arraynum = i;
                 break;
             }
         }
         setcursor(0);
-		parseLocation(location);
-        move(drawlocation[0], drawlocation[1]);
+		moveToLocation(location);
         return revealtilesinarr(arraynum);
     }
 
@@ -350,14 +323,15 @@ int handlechecktiles(int location)
 
 void drawFrame(int maxx, int maxy)
 {
-    for (int i = 0; i<fieldwidth; ++i,moveprint(maxy/2-fieldheight/2-1,maxx/2-fieldwidth/2-1+i, "="));
+    for (int i = 0; i<fieldwidth; ++i, moveprint(maxy/2-fieldheight/2-1,maxx/2-fieldwidth/2-1+i, "="));
 
-    for (int i = 0;i<fieldheight+2;++i){
-        moveprint(maxy/2-fieldheight/2+i-1,maxx/2-fieldwidth/2-2, "||");
-        moveprint(maxy/2-fieldheight/2+i-1,maxx/2+fieldwidth/2+fieldwidth%2, "||");
+    for (int i = 0; i<fieldheight+2; ++i)
+	{
+        moveprint(maxy/2-fieldheight/2+i-1, maxx/2-fieldwidth/2-2, "||");
+        moveprint(maxy/2-fieldheight/2+i-1, maxx/2+fieldwidth/2+fieldwidth%2, "||");
     }
 
-    for (int i = 0; i<fieldwidth; ++i,moveprint(maxy/2+fieldheight/2+fieldheight%2,maxx/2-fieldwidth/2-1+i, "="));
+    for (int i = 0; i<fieldwidth; ++i, moveprint(maxy/2+fieldheight/2+fieldheight%2,maxx/2-fieldwidth/2-1+i, "="));
 }
 
 void drawMarkerCount(int used, int total)
@@ -370,205 +344,80 @@ void drawMarkerCount(int used, int total)
 
 void generateheatmap()
 {
-    field.heatmap = malloc(sizeof(unsigned char)*fieldheight*fieldwidth);
+    field.heatmap = malloc(fieldheight*fieldwidth);
     for (int i = 0; i<fieldheight*fieldwidth; ++i)
         field.heatmap[i] = checkmines(i);
 }
 
 void generateemptygroups()
 {
-    int counter = 0;
-    int **tempptr = NULL;
-    int *tempptrs = NULL;
-
+	uint8_t found;
+	uint32_t lastFound = -1;
     field.qtyfreetiles = 0;
-    field.freetiles = malloc(sizeof(int*)*(field.qtyfreetiles+1));
-    field.freetiles[0] = malloc(sizeof(int)); // used arrays and their sizes
-    field.freetiles[0][0] = -1;
-    int found;
+	field.freetiles = NULL;
+	field.freetileslengths = NULL;
 
-    while(counter<fieldheight*fieldwidth){
-        if (field.heatmap[counter]==0){
-            if (field.freetiles[0][0]==-1){   // just for the start
-                while((tempptr = realloc(field.freetiles, (++field.qtyfreetiles+1)*sizeof(int*)))==NULL);
-                field.freetiles = tempptr;
-                field.freetiles[1] = malloc(sizeof(int));
-                field.freetiles[1][0] = counter;
-                field.freetiles[0][0]=0;
-            }
-            else
-            {
-                found = 0;
-                for (int i=1; (i<=field.qtyfreetiles)&&!found; ++i)
-                {
-                    if (findpath(field.freetiles[i][0], counter)==1||findpath(counter, field.freetiles[i][0])==1)
-                    {
-                        tempptrs = NULL;
-                        field.freetiles[0][i-1] = field.freetiles[0][i-1]+1;
-                        while ((tempptrs = realloc(field.freetiles[i], (field.freetiles[0][i-1]+1)*sizeof(int)))==NULL);
-                        field.freetiles[i] = tempptrs;
-                        field.freetiles[i][field.freetiles[0][i-1]] = counter;
-                        ++found;
-                        break;
-                    }
-                }
-                if (found==0)
-                {
-                    tempptr = NULL;
-                    tempptrs = NULL;
-                    ++field.qtyfreetiles;
-                    while((tempptr = realloc(field.freetiles, (field.qtyfreetiles+1)*sizeof(int*)))==NULL);
-                    field.freetiles = tempptr;
-                    field.freetiles[field.qtyfreetiles] = malloc(sizeof(int));    //allocate a new array with one int(counter), increase qtyfreetiles (used arrays)
-                    field.freetiles[field.qtyfreetiles][0] = counter;
-                    while((tempptrs = realloc(field.freetiles[0], field.qtyfreetiles*sizeof(int)))==NULL);
-                    field.freetiles[0] = tempptrs;
-                    field.freetiles[0][field.qtyfreetiles-1] = 0;
-                }
-            }
-        }
-        ++counter;
-    }
-}
+	for (int i = 0; i<fieldwidth*fieldheight; ++i)
+	{
+		if (field.heatmap[i]==0) // empty tile found
+		{
+			found = 0;
+			for (int b = 0; b<4; ++b)
+			{
+				if (!onthesamerow(getLocation(i, b), i/fieldwidth+(b/3-1))) continue;
+				if (field.heatmap[getLocation(i, b)]==0)
+				{
+					for (int t = 0; t<field.qtyfreetiles; ++t)
+					{
+						if (contains(field.freetiles[t], getLocation(i, b), field.freetileslengths[t]))
+						{
+							if (t==lastFound) continue;
+							if (found) 
+							{
+								// merge if multiple arrays are connected
+								field.freetileslengths[lastFound] += field.freetileslengths[t];
+								field.freetiles[lastFound] = realloc(field.freetiles[lastFound], sizeof(uint32_t)*(field.freetileslengths[lastFound]));
+								for (int l = field.freetileslengths[t]; l>0; --l)
+									field.freetiles[lastFound][field.freetileslengths[lastFound]-l] = field.freetiles[t][field.freetileslengths[t]-l];
 
-int findpath(int pos1, int pos2)
-{
-    int curloc = pos1;
-    int failedattempts = 0;
-    int priorityxy = 0; // 0 - x, 1 - y
-    int directionx = 0; // -1 - left, 1 - right
-    int directiony = 0; // -1 - up, 1 - down
-    int forceoverride = 0;
-    int overridedirx = 0;
-    int overridediry = 0;
-    int flipped = 0;
+								free(field.freetiles[t]);
 
+								for (int l = t; l<field.qtyfreetiles-1; ++l)
+								{
+									field.freetiles[l] = field.freetiles[l+1];
+									field.freetileslengths[l] = field.freetileslengths[l+1];
+								}
 
-    while (curloc!=pos2&&failedattempts<=fieldwidth)
-    {
-		// this is kinda scary
-        directionx = forceoverride?overridedirx:(curloc%fieldwidth>pos2%fieldwidth?-1:1)*(curloc%fieldwidth!=pos2%fieldwidth);
-        directiony = forceoverride?overridediry:(curloc/fieldwidth>pos2/fieldwidth?-1:1)*(curloc/fieldwidth!=pos2/fieldwidth);
+								lastFound = t;
+								field.freetiles = realloc(field.freetiles, sizeof(uint32_t*)*field.qtyfreetiles);
+								field.freetileslengths = realloc(field.freetileslengths, sizeof(uint32_t)*field.qtyfreetiles);
+								--field.qtyfreetiles;
+								continue;
+							}
+							field.freetiles[t] = realloc(field.freetiles[t], (field.freetileslengths[t]+1)*sizeof(uint32_t));
+							field.freetiles[t][field.freetileslengths[t]] = i;
+							++field.freetileslengths[t];
+							found = 1;
+							lastFound = t;
+						}
+					}
+					
+				}
+			}
+			if (!found) // no tiles around found
+			{
+				field.freetiles = realloc(field.freetiles, (field.qtyfreetiles+1)*sizeof(uint32_t*));
+				field.freetileslengths = realloc(field.freetileslengths, sizeof(uint32_t)*(field.qtyfreetiles+1));
+				field.freetiles[field.qtyfreetiles] = malloc(sizeof(uint32_t));
 
-        if (field.heatmap[curloc+directionx]!=0&&field.heatmap[curloc+directiony*fieldwidth]!=0)
-        {
-            forceoverride = 0;
-            overridedirx = 0;
-            overridediry = 0;
-            failedattempts++;
-            if (curloc%fieldwidth+1!=1-(-directionx>0?1:1-(-directionx==-1))&&-directiony>0?curloc%fieldwidth<=fieldheight-1:curloc>=fieldwidth) // if on left/right and bottom/top border
-            {
-                return 0;
-            }
-            else if (curloc-(fieldwidth+1)*(-directionx)>=fieldwidth-1&&field.heatmap[curloc-(fieldwidth+1)*(-directionx)]==0)
-            {
-                curloc = curloc - (fieldwidth+1)*(-directionx);
-            }
-            else if (curloc-(fieldwidth+1)*(directionx)>=fieldwidth-1&&field.heatmap[curloc-(fieldwidth+1)*(directionx)]==0)
-            {
-                curloc = curloc - (fieldwidth+1)*(directionx);
-            }
-            else if (field.heatmap[curloc-directionx]==0&&(directionx==1?curloc%fieldwidth<fieldwidth-2:directionx==-1?curloc%fieldwidth>=2:1))
-            {
-                if (directionx==0)
-                {
-                    if (curloc%fieldwidth+1==0&&field.freetiles[curloc+1]==0)
-                    {
-                        curloc++;
-                        priorityxy=1;
-                    }
-                    else if (curloc%fieldwidth+1==1&&field.freetiles[curloc-1]==0)
-                    {
-                        curloc--;
-                        priorityxy=1;
-                    }
-                }
-                else
-                {
-                    curloc = curloc + directionx;
-                    priorityxy = 1;
-                }
-            }
-            else if (field.heatmap[curloc+directiony*fieldwidth]==0&&(directiony==1?curloc/fieldwidth<=fieldheight-2:directiony==-1?curloc/fieldwidth>=2:1))
-            {
+				field.freetileslengths[field.qtyfreetiles] = 1;
+				field.freetiles[field.qtyfreetiles][0] = i;
 
-                if (directiony==0)
-                {
-                    if ((curloc/fieldwidth>=2||curloc/fieldwidth<=fieldwidth-2)&&field.freetiles[curloc+fieldwidth]==0)
-                    {
-                        curloc+=fieldwidth;
-                        priorityxy=0;
-                    }
-                    else if ((curloc/fieldwidth>=2||curloc/fieldwidth<=fieldwidth-2)&&field.freetiles[curloc-fieldwidth]==0)
-                    {
-                        curloc-=fieldwidth;
-                        priorityxy=0;
-                    }
-                }
-                else
-                {
-                    curloc = curloc + directiony*fieldwidth;
-                    priorityxy = 0;
-                }
-            }
-            else{return 0;} // cant do anything
-        }
-        else if (field.heatmap[curloc+directionx]!=0&&directiony!=0&&(directiony>0?curloc%fieldwidth<fieldheight-1:curloc>fieldwidth)) // if not on top/bottom corner, prioritises going up/down
-        {
-            priorityxy = 1;
-            overridedirx = 0;
-            overridediry = 0;
-            forceoverride = 0;
-        }
-        else if (field.heatmap[curloc+directiony*fieldwidth]!=0&&directionx!=0&&curloc%fieldwidth+1!=1-(directionx>0?1:0))  // if not on left/right border, prioritises going right/left
-        {
-            priorityxy = 0;
-            overridedirx = 0;
-            overridediry = 0;
-            forceoverride = 0;
-        }
-        else if (field.heatmap[curloc+directionx]!=0&&directiony==0)
-        {
-            failedattempts++;
-            forceoverride = 1;
-            overridediry = overridediry!=0?overridediry:curloc<fieldwidth?1:curloc/fieldwidth<=fieldheight/2?1:-1;
-            priorityxy = 1;
-        }
-        else if (field.heatmap[curloc+directiony*fieldwidth]!=0&&directionx==0)
-        {
-            failedattempts++;
-            forceoverride = 1;
-            overridedirx = overridedirx!=0?overridedirx:curloc%fieldwidth==0?1:curloc%fieldwidth<=fieldwidth/2?1:-1;
-            priorityxy = 0;
-        }
-        else
-        {
-            forceoverride = 0;
-        }
-
-        //move
-
-        if (priorityxy) // y
-        {
-            curloc += fieldwidth*directiony;
-            if (!directiony&&!forceoverride){priorityxy = 0;}
-            if (!directionx&&!forceoverride){priorityxy = 1;}
-        }
-        else if (!priorityxy) // x
-        {
-            curloc += directionx;
-            if (!directiony&&!forceoverride){priorityxy = 0;}
-            if (!directionx&&!forceoverride){priorityxy = 1;}
-        }
-
-
-        if ((failedattempts==fieldwidth-1)&&!flipped&&(overridedirx!=0||overridediry!=0)){
-            priorityxy=1;failedattempts=0;curloc=pos1;flipped=1;}
-        else if (failedattempts==fieldwidth-1&&flipped){return 0;}
-
-    }
-    if (curloc==pos2) return 1;
-	else return 0;
+				++field.qtyfreetiles;
+			}
+			lastFound = -1;
+		}
+	}
 }
 
 void revealmines()
@@ -584,40 +433,21 @@ void revealmines()
 int showclosetiles(int arraynum)
 {
     setcursor(0);
-    int detectcnt = 0;  
-    for (int i = 0; i<=field.freetiles[0][arraynum-1]; ++i)
+    int detectcnt = 0;
+    for (int i = 0; i<field.freetileslengths[arraynum]; ++i)
 	{
 		for (int f = 0; f<9; ++f)
 		{
-			if (onthesamerow(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[arraynum][i]/fieldwidth+(f/3-1)))
+			if (onthesamerow(getLocation(field.freetiles[arraynum][i], f), field.freetiles[arraynum][i]/fieldwidth+(f/3-1)))
 			{
-				if (field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]!=0)
+				if (fieldbuffer[getLocation(field.freetiles[arraynum][i], f)]==' '||fieldbuffer[getLocation(field.freetiles[arraynum][i], f)]=='M')
 				{
-					parseLocation(field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3));
-					if (fieldbuffer[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]==' '||fieldbuffer[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]=='M')
-					{
-						++detectcnt;
-						wrcolorpair(NEARBY);
-						move(drawlocation[0], drawlocation[1]);
-						fieldbuffer[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)] = 'O';
-						dprintf(STDOUT_FILENO, "%d", field.heatmap[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)]);
-						wrcolorpair(0);
-					}
-				}
-				else
-				{
-					if (!contains(field.freetiles[arraynum], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][arraynum-1]+1))
-					{
-						for (int x = 1; x<=field.qtyfreetiles; ++x)
-						{
-							if (x==arraynum) continue;
-							if (contains(field.freetiles[x], field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3), field.freetiles[0][x-1]+1))
-							{
-								detectcnt += revealtilesinarr(x);
-								break;
-							}
-						}
-					}
+					++detectcnt;
+					wrcolorpair(NEARBY);
+					moveToLocation(getLocation(field.freetiles[arraynum][i], f));
+					fieldbuffer[field.freetiles[arraynum][i]-1-fieldwidth+f%3+fieldwidth*(f/3)] = 'O';
+					dprintf(STDOUT_FILENO, "%d", field.heatmap[getLocation(field.freetiles[arraynum][i], f)]);
+					wrcolorpair(0);
 				}
 			}
 		}
