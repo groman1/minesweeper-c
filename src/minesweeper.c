@@ -95,6 +95,11 @@ int main(int argc, char **argv)
 			scanf("%hu", &fieldheight);
 			printf("Enter the quantity of mines: ");
 			scanf("%hu", &minescount);
+			if (!fieldwidth||!fieldheight||!minescount)
+			{
+				printf("\nInvalid input\n");
+				return 1;
+			}
 		}
 	}
 	else if (argc==2)
