@@ -157,7 +157,6 @@ int main()
 	
 	printInstructions();
 	printColors();
-	int currkey;
 	highlight_choice(0, colorpos[0], 1);
 	highlight_choice(1, colorpos[1], 1);
 
@@ -219,8 +218,6 @@ int main()
 	setcursor(1);
 	deinit();
 
-	char command[160];
-	sprintf(command, "gcc src/minesweeper.c src/rawtui.c -o minesweeper-c -D MARKED1=%d -D MARKED2=%d -D NEARBY1=%d -D NEARBY2=%d -D EMPTY1=%d -D EMPTY2=%d -D MINE1=%d -D MINE2=%d", markedcolors[0], markedcolors[1], nearbycolors[0], nearbycolors[1], emptycolors[0], emptycolors[1], minecolors[0], minecolors[1]);
-	system(command);
+	fprintf(stderr, "-DMARKED1=%d -DMARKED2=%d -DNEARBY1=%d -DNEARBY2=%d -DEMPTY1=%d -DEMPTY2=%d -DMINE1=%d -DMINE2=%d", markedcolors[0], markedcolors[1], nearbycolors[0], nearbycolors[1], emptycolors[0], emptycolors[1], minecolors[0], minecolors[1]);
     return 0;
 }

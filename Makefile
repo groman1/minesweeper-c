@@ -1,16 +1,39 @@
-main:
-	cc src/configure.c src/rawtui.c -o configure
-	./configure
+CFLAGS := -Wall -Wextra
+LDFLAGS :=
+INSTALL := install
+RM := rm -f
+ARGSPATH := .colorargs
 
-debug:
-	cc src/configure.c src/rawtui.c -o configure
-	./configure debug
+main: CFLAGS += -O2
+main: LDFLAGS += -O2
+main: configure minesweeper
+
+debug: CFLAGS += -g
+debug: LDFLAGS += -g
+debug: configure minesweeper
+
+configure: src/rawtui.o src/configure.o
+	@$(info LD $@)
+	@$(CC) $^ $(LDFLAGS) -o $@
+	@$(info CONFIGURE)
+	@./configure 2> $(ARGSPATH)
+
+minesweeper: CFLAGS += $(file < $(ARGSPATH))
+minesweeper: src/rawtui.o src/minesweeper.o
+	@$(info LD $@)
+	@$(CC) $^ $(LDFLAGS) -o $@
 
 install:
-	mv minesweeper-c /usr/bin/
+	@$(info INSTALL minesweeper)
+	@$(INSTALL) minesweeper /bin/
 
+clean: OBJECTFILES := $(patsubst src/%.c, src/%.o, $(wildcard src/*.c))
 clean:
-	rm -f configure minesweeper-c
+	@$(info RM$(OBJECTFILES) .colorargs)
+	@$(RM) $(OBJECTFILES) .colorargs
+	@$(info RM configure minesweeper)
+	@$(RM) configure minesweeper
 
-findpath_testing:
-	cc src/findpath_testing.c -fsanitize=address -o findpath-testing
+src/%.o: src/%.c
+	@$(info CC $<)
+	@$(CC) -c $< $(CFLAGS) -o $@

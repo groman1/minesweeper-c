@@ -15,6 +15,7 @@
 
 #ifndef MARKED1
 
+#warning "Using default colors"
 #define MARKED1 7
 #define MARKED2 4
 #define NEARBY1 7
@@ -26,7 +27,7 @@
 
 #endif
 
-#define onthesamerow(id, row) (int)(((int)id/(int)fieldwidth==(int)row)&&((id>>31)==0)&&((int)id<fieldwidth*fieldheight))
+#define onthesamerow(id, row) ((id/fieldwidth==row)&&((id>>31)==0)&&(id<fieldwidth*fieldheight))
 #define getLocation(location, counter) (location-1-fieldwidth+counter%3+fieldwidth*(counter/3))
 #define moveToLocation(location) move(location/fieldwidth+maxy/2-fieldheight/2, location%fieldwidth+maxx/2-fieldwidth/2)
 
@@ -127,6 +128,11 @@ int main(int argc, char **argv)
 			return 0;
 		}
 	}
+	else
+	{
+		puts("Too many arguments, exiting");
+		return 1;
+	}
 
 	getTermXY(&maxy, &maxx);
     if (maxx<fieldwidth+2||maxy<fieldheight+2)
@@ -163,7 +169,7 @@ int main(int argc, char **argv)
         generateheatmap();
         generateemptygroups();
 
-        int cont = 1;
+        uint8_t cont = 1;
         drawFrame(maxx, maxy);
 		drawMarkerCount(usedMarkers, minescount);
 
@@ -175,11 +181,11 @@ int main(int argc, char **argv)
                 uint8_t ch = inesc();
                 if (curslocation/fieldwidth>0&&ch==188)
 					curslocation -= fieldwidth; // UP
-                else if (curslocation/fieldwidth<fieldheight-1&&ch==189)
+                else if ((curslocation/fieldwidth<(uint32_t)fieldheight-1)&&ch==189)
 					curslocation += fieldwidth; // DOWN
-                else if (curslocation%fieldwidth>0&&ch==191)
+                else if ((curslocation%fieldwidth)&&ch==191)
 					--curslocation; // LEFT
-                else if (curslocation%fieldwidth<fieldwidth-1&&ch==190)
+                else if ((curslocation%fieldwidth<(uint32_t)fieldwidth-1)&&ch==190)
 					++curslocation; // RIGHT
                 else if (ch==3||ch==113) // q
 				{
@@ -290,7 +296,7 @@ int genrandom()
 
 uint8_t contains(uint32_t *arr, uint32_t chkval, uint32_t len)
 {
-    for (int i = 0; i<len; ++i)
+    for (uint32_t i = 0; i<len; ++i)
         if (arr[i]==chkval)
             return 1;
     return 0;
@@ -315,7 +321,7 @@ uint8_t checkmines(int location)
 int revealtilesinarr(int arraynum)
 {
 	wrcolorpair(EMPTY);
-	for (int i = 0; i<field.freetileslengths[arraynum]; ++i)
+	for (uint32_t i = 0; i<field.freetileslengths[arraynum]; ++i)
 	{
 		moveToLocation(field.freetiles[arraynum][i]);
 		print(" ");
@@ -327,7 +333,7 @@ int revealtilesinarr(int arraynum)
 
 int handlechecktiles(int location)
 {
-    int arraynum;
+    int arraynum = 0;
 
     if (field.heatmap[location])
 	{
@@ -385,7 +391,7 @@ void generateheatmap()
 void generateemptygroups()
 {
 	uint8_t found;
-	uint32_t lastFound = -1;
+	int32_t lastFound = -1;
     field.qtyfreetiles = 0;
 	field.freetiles = NULL;
 	field.freetileslengths = NULL;
@@ -400,7 +406,7 @@ void generateemptygroups()
 				if (!onthesamerow(getLocation(i, b), i/fieldwidth+(b/3-1))) continue;
 				if (field.heatmap[getLocation(i, b)]==0)
 				{
-					for (int t = 0; t<field.qtyfreetiles; ++t)
+					for (int32_t t = 0; t<field.qtyfreetiles; ++t)
 					{
 						if (contains(field.freetiles[t], getLocation(i, b), field.freetileslengths[t]))
 						{
@@ -422,6 +428,7 @@ void generateemptygroups()
 								}
 
 								lastFound = t;
+								found = 0; // to avoid merging random arrays
 								field.freetiles = realloc(field.freetiles, sizeof(uint32_t*)*field.qtyfreetiles);
 								field.freetileslengths = realloc(field.freetileslengths, sizeof(uint32_t)*field.qtyfreetiles);
 								--field.qtyfreetiles;
@@ -434,7 +441,6 @@ void generateemptygroups()
 							lastFound = t;
 						}
 					}
-					
 				}
 			}
 			if (!found) // no tiles around found
@@ -457,9 +463,8 @@ void revealmines()
 {
     wrcolorpair(MINE);
     for (int i = 0; i<minescount; ++i)
-	{
         moveprint(maxy/2-fieldheight/2+field.mines[i]/fieldwidth, maxx/2-fieldwidth/2+field.mines[i]%fieldwidth, "+");
-    }
+
     wrcolorpair(0);
 }
 
@@ -467,7 +472,7 @@ int showclosetiles(int arraynum)
 {
     setcursor(0);
     int detectcnt = 0;
-    for (int i = 0; i<field.freetileslengths[arraynum]; ++i)
+    for (uint32_t i = 0; i<field.freetileslengths[arraynum]; ++i)
 	{
 		for (int f = 0; f<9; ++f)
 		{
