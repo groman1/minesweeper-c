@@ -243,11 +243,10 @@ int main(int argc, char **argv)
 
             if (selectedsquares==fieldwidth*fieldheight-minescount)
             {
-                revealmines();
                 moveprint(1, maxx/2-8, "Congratulations!");
                 setcursor(0);
                 cont = 0;
-				stop = in()!=114;
+				stop = inesc()!=114;
             }
 
         }
@@ -357,7 +356,6 @@ int handlechecktiles(int location)
 		moveToLocation(location);
         return revealtilesinarr(arraynum);
     }
-
 }
 
 void drawFrame(int maxx, int maxy)
@@ -390,7 +388,7 @@ void generateheatmap()
 
 void generateemptygroups()
 {
-	uint8_t found;
+	uint8_t found, arrayFound;
 	int32_t lastFound = -1;
     field.qtyfreetiles = 0;
 	field.freetiles = NULL;
@@ -401,23 +399,29 @@ void generateemptygroups()
 		if (field.heatmap[i]==0) // empty tile found
 		{
 			found = 0;
-			for (int b = 0; b<4; ++b)
+			arrayFound = 0;
+			for (int b = 0; b<4; ++b) // look around for an already present empty tile
 			{
-				if (!onthesamerow(getLocation(i, b), i/fieldwidth+(b/3-1))) continue;
-				if (field.heatmap[getLocation(i, b)]==0)
+				if (!onthesamerow(getLocation(i, b), i/fieldwidth+(b/3-1))) continue; // fixes borders
+				if (field.heatmap[getLocation(i, b)]==0) // empty tile found
 				{
-					for (int32_t t = 0; t<field.qtyfreetiles; ++t)
+					for (int32_t t = 0; t<field.qtyfreetiles; ++t) // search for the empty tile in the freetiles arrays
 					{
 						if (contains(field.freetiles[t], getLocation(i, b), field.freetileslengths[t]))
 						{
 							if (t==lastFound) continue;
-							if (found) 
+							if (arrayFound) 
 							{
 								// merge if multiple arrays are connected
+								uint32_t initlen = field.freetileslengths[lastFound];
 								field.freetileslengths[lastFound] += field.freetileslengths[t];
 								field.freetiles[lastFound] = realloc(field.freetiles[lastFound], sizeof(uint32_t)*(field.freetileslengths[lastFound]));
-								for (int l = field.freetileslengths[t]; l>0; --l)
-									field.freetiles[lastFound][field.freetileslengths[lastFound]-l] = field.freetiles[t][field.freetileslengths[t]-l];
+
+								while (field.freetileslengths[t])
+								{
+									field.freetiles[lastFound][initlen+field.freetileslengths[t]-1] = field.freetiles[t][field.freetileslengths[t]-1];
+									--field.freetileslengths[t];
+								}
 
 								free(field.freetiles[t]);
 
@@ -427,18 +431,19 @@ void generateemptygroups()
 									field.freetileslengths[l] = field.freetileslengths[l+1];
 								}
 
-								lastFound = t;
-								found = 0; // to avoid merging random arrays
+								arrayFound = 0; // to avoid merging random arrays
 								field.freetiles = realloc(field.freetiles, sizeof(uint32_t*)*field.qtyfreetiles);
 								field.freetileslengths = realloc(field.freetileslengths, sizeof(uint32_t)*field.qtyfreetiles);
 								--field.qtyfreetiles;
 								continue;
 							}
+							// the value was found, copy append the current cell to it
 							field.freetiles[t] = realloc(field.freetiles[t], (field.freetileslengths[t]+1)*sizeof(uint32_t));
 							field.freetiles[t][field.freetileslengths[t]] = i;
 							++field.freetileslengths[t];
+							arrayFound = 1; // an array has been found, merge if another array found nearby
 							found = 1;
-							lastFound = t;
+							lastFound = t; // the number of the array found
 						}
 					}
 				}
